@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FARSISK — Biblioteca de Ejercicios</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="../assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="../assets/css/lumbacare.css"/>
+  <style>
+    body { background:#f8f9ff; }
+
+    /* ── Exercise card ── */
+    .ex-card {
+      background:#fff; border:1.5px solid #e2e8f0; border-radius:1.25rem;
+      overflow:hidden; display:flex; flex-direction:column;
+      transition:all .25s cubic-bezier(.4,0,.2,1);
+    }
+    .ex-card:not(.locked):hover {
+      border-color:#0ea5e9;
+      box-shadow:0 8px 32px rgba(14,165,233,.12);
+      transform:translateY(-4px);
+    }
+    .ex-card.locked { opacity:.65; filter:grayscale(.4); }
+    .ex-card.locked:hover { transform:none; box-shadow:none; border-color:#e2e8f0; }
+
+    .ex-card .thumb { position:relative; height:180px; overflow:hidden; background:#e5eeff; }
+    .ex-card .thumb img { width:100%; height:100%; object-fit:cover; transition:transform .5s ease; }
+    .ex-card:not(.locked):hover .thumb img { transform:scale(1.07); }
+
+    .diff-badge {
+      position:absolute; top:12px; right:12px;
+      border-radius:9999px; padding:3px 12px;
+      font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+    }
+    .diff-basico    { background:#dcfce7; color:#15803d; }
+    .diff-intermedio{ background:#fef9c3; color:#854d0e; }
+    .diff-avanzado  { background:#fee2e2; color:#991b1b; }
+
+    .tag { background:#e0f2fe; color:#0369a1; border-radius:9999px; padding:2px 10px; font-size:11px; font-weight:600; }
+
+    /* Btn start */
+    .btn-iniciar {
+      width:100%; padding:12px; border-radius:.75rem;
+      background:#e5eeff; color:#006591; border:none;
+      font-size:14px; font-weight:700; cursor:pointer;
+      transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .btn-iniciar:hover { background:#006591; color:#fff; }
+
+    /* Filter chips */
+    .chip {
+      padding:6px 16px; border-radius:9999px; border:1.5px solid #bec8d2;
+      font-size:13px; font-weight:600; cursor:pointer; transition:all .15s;
+      background:#fff; color:#3e4850; white-space:nowrap;
+    }
+    .chip.active { background:#006591; color:#fff; border-color:#006591; }
+    .chip:hover:not(.active) { border-color:#0ea5e9; color:#006591; }
+
+    /* Detail modal */
+    .modal-overlay { position:fixed; inset:0; background:rgba(11,28,48,.5); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .modal-card    { background:#fff; border-radius:1.5rem; max-width:560px; width:100%; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.2); max-height:90vh; overflow-y:auto; }
+
+    /* Progress bar for personal best */
+    .prog-bar { height:6px; background:#e5eeff; border-radius:3px; overflow:hidden; }
+    .prog-fill { height:100%; border-radius:3px; background:#006591; transition:width .8s ease; }
+
+    /* Empty state */
+    #empty-state { display:none; text-align:center; padding:64px 32px; grid-column:1/-1; }
+  </style>
+</head>
+<body>
+<div id="lc-main">
+<div class="p-8 max-w-7xl mx-auto">
+
+  <!-- HEADER -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface mb-1">Biblioteca de Ejercicios</h2>
+      <p class="font-body-sm text-on-surface-variant">Ejercicios asignados por tu fisioterapeuta · <span id="available-count">4</span> disponibles</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- View toggle -->
+      <div class="flex gap-1 bg-surface-container rounded-xl p-1 border border-outline-variant">
+        <button id="view-grid" onclick="setView('grid')" class="p-2 rounded-lg bg-white border border-outline-variant transition-all" aria-label="Vista cuadrícula">
+          <span class="material-symbols-outlined" style="font-size:18px;color:#006591;">grid_view</span>
+        </button>
+        <button id="view-list" onclick="setView('list')" class="p-2 rounded-lg transition-all" aria-label="Vista lista">
+          <span class="material-symbols-outlined" style="font-size:18px;color:#6e7881;">view_list</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SEARCH + FILTERS -->
+  <div class="bg-white border border-outline-variant rounded-2xl p-5 mb-8">
+    <div class="flex flex-wrap gap-4 items-end mb-4">
+      <!-- Search -->
+      <div class="flex-1 min-w-52">
+        <label class="font-label-sm text-on-surface-variant block mb-1.5">Buscar ejercicio</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:18px;">search</span>
+          <input id="search-input" type="text" placeholder="¿Qué ejercicio buscas?"
+            class="input-field pl-10 h-10" oninput="applyFilters()"/>
+        </div>
+      </div>
+      <!-- Difficulty -->
+      <div class="w-44">
+        <label class="font-label-sm text-on-surface-variant block mb-1.5">Dificultad</label>
+        <select id="filter-diff" class="input-field h-10 text-sm" onchange="applyFilters()">
+          <option value="">Todas</option>
+          <option value="basico">Básico</option>
+          <option value="intermedio">Intermedio</option>
+          <option value="avanzado">Avanzado</option>
+        </select>
+      </div>
+      <!-- Category -->
+      <div class="w-44">
+        <label class="font-label-sm text-on-surface-variant block mb-1.5">Categoría</label>
+        <select id="filter-cat" class="input-field h-10 text-sm" onchange="applyFilters()">
+          <option value="">Todas</option>
+          <option value="flexion">Flexión</option>
+          <option value="extension">Extensión</option>
+          <option value="estabilizacion">Estabilización</option>
+          <option value="movilidad">Movilidad</option>
+        </select>
+      </div>
+      <button onclick="clearFilters()" class="btn-secondary h-10 px-4 text-sm">
+        <span class="material-symbols-outlined text-base">filter_list_off</span>
+        Limpiar
+      </button>
+    </div>
+
+    <!-- Category chips -->
+    <div class="flex flex-wrap gap-2">
+      <span class="font-label-sm text-on-surface-variant self-center">Acceso rápido:</span>
+      <button class="chip active" data-cat="" onclick="quickFilter(this,'')">Todos</button>
+      <button class="chip" data-cat="estabilizacion" onclick="quickFilter(this,'estabilizacion')">Estabilización</button>
+      <button class="chip" data-cat="movilidad"      onclick="quickFilter(this,'movilidad')">Movilidad</button>
+      <button class="chip" data-cat="flexion"        onclick="quickFilter(this,'flexion')">Flexión</button>
+      <button class="chip" data-cat="extension"      onclick="quickFilter(this,'extension')">Extensión</button>
+    </div>
+  </div>
+
+  <!-- EXERCISE GRID -->
+  <div id="exercise-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+    <!-- Generated by JS -->
+    <div id="empty-state">
+      <span class="material-symbols-outlined" style="font-size:48px;color:#bec8d2;">search_off</span>
+      <p class="font-headline-sm text-on-surface-variant mt-3">Sin resultados</p>
+      <p class="font-body-sm text-on-surface-variant mt-1">Prueba con otros filtros</p>
+      <button onclick="clearFilters()" class="btn-primary mt-4">Ver todos los ejercicios</button>
+    </div>
+  </div>
+
+</div>
+</div><!-- /lc-main -->
+
+<!-- DETAIL MODAL -->
+<div id="modal-detail" class="modal-overlay" style="display:none;" onclick="closeDetail(event)">
+  <div class="modal-card" id="modal-content">
+    <!-- Content injected by JS -->
+  </div>
+</div>
+
+<script src="../assets/js/lumbacare-nav.js"></script>
+<script>
+// ── Auth guard ─────────────────────────────────────────────
+if (!localStorage.getItem('lc_token')) window.location.href = '../login.html';
+LumbaCareNav.init({ role: 'paciente', activePage: 'ejercicios' });
+
+// ═══════════════════════════════════════════════════════════
+// EXERCISE DATABASE
+// ═══════════════════════════════════════════════════════════
+const EXERCISES = [
+  {
+    id:          'puente-lumbar',
+    name:        'Puente Lumbar',
+    desc:        'Fortalece la zona lumbar, glúteos e isquiotibiales de manera controlada. Ideal como ejercicio base de rehabilitación.',
+    difficulty:  'basico',
+    category:    'estabilizacion',
+    duration:    12,
+    sets:        3,
+    reps:        12,
+    tags:        ['Lumbar','Glúteos','Estabilización'],
+    locked:      false,
+    bestScore:   88,
+    sessions:    7,
+    img:         'https://lh3.googleusercontent.com/aida-public/AB6AXuB572_19bnUlukBiuPIzsPgUNLPVV2e_Iv3jxwxSue5mMeP-DWt_qBnHsxZRH2qmIBfnsLOuRnXTk60qOEkR8hWy-DvSeDwQ6Ik8oWeFBn4E-ijjNj-IYIxEb8ofV_f5c6wwrL8wvWmcAp2MkAJlYBTu5WDI38h5cVNl39Qw-5ZP1DdZGjx3sQd7YML6WXHHM-oojM847kvbyy_n1E3q60oVrSE6JGXnhMtdeoOKQvSSaybltwTTVXR36n7Q4Reh7M54R7fRDkzV8um',
+    instructions:['Acuéstate boca arriba con rodillas flexionadas a 90° y pies apoyados','Contrae el core y levanta la cadera del suelo','Mantén el cuerpo en línea recta de hombros a rodillas','Baja lentamente hasta casi tocar el suelo'],
+    muscles:     ['Glúteo mayor','Isquiotibiales','Core','Erectores espinales'],
+  },
+  {
+    id:          'gato-camello',
+    name:        'Estiramiento Gato-Camello',
+    desc:        'Mejora la flexibilidad de la columna lumbar y torácica. Reduce la rigidez matutina y alivia la tensión muscular.',
+    difficulty:  'basico',
+    category:    'movilidad',
+    duration:    10,
+    sets:        3,
+    reps:        10,
+    tags:        ['Lumbar','Movilidad','Diario'],
+    locked:      false,
+    bestScore:   95,
+    sessions:    12,
+    img:         'https://lh3.googleusercontent.com/aida-public/AB6AXuA2ivz4dvmPHuMy48M72pkrGR6eenl9ysiMur02AzF8abXnvCoF0PHUQyv2_zMYO_MCvvgtZ24tupmrCvJRWHGv-eD7q_uCMpn3jeH-bowqrbDgRiCIAh7zN6nynv1e05czCjcbTrsFsAOoxPHVb4NaFNVq0FnUU09eAKpgZF6mFaiOAh189cIWM0Ft8kjs0zM0E3DgLnBH2malIJ9YjbwjlhqXO6ADg_0OhMRrh41jfQd4UwPahKGwGVUTcS97PYrDKCryKGnbvtb7',
+    instructions:['Posición de cuadrupedia con manos bajo hombros y rodillas bajo caderas','Inhala y arquea la espalda hacia abajo (posición "vaca")','Exhala y redondea la espalda hacia arriba (posición "gato")','Coordina el movimiento con la respiración, sin forzar'],
+    muscles:     ['Erectores espinales','Multífidos','Recto abdominal'],
+  },
+  {
+    id:          'plancha-frontal',
+    name:        'Plancha Frontal',
+    desc:        'Estabilización del core profundo para proteger el área lumbar. Activa el transverso abdominal y los multífidos.',
+    difficulty:  'intermedio',
+    category:    'estabilizacion',
+    duration:    8,
+    sets:        4,
+    reps:        1,
+    tags:        ['Core','Estabilización','Lumbar'],
+    locked:      false,
+    bestScore:   78,
+    sessions:    5,
+    img:         'https://lh3.googleusercontent.com/aida-public/AB6AXuBQBrkZbGe4PfgY5-Jv_uvWQUtyv4B9Hg93sYsnmTro_Fq6tAcACZAVgLWVXUrY5_xh8NFnd73BkDuJnwt0ou6-CE_75PKpTVZi7LQ5o6rPj9lZ473C9g4yUBPFlvB10SpWEEtapXGfoIeVhqEX6ZqDd5AF7N5WOeNpAybGmimbPOLruhyjRZrsRP_3410Y0Z8yX-71wFUnQVRKW8N5OMzhCiTsQyRL4PFHwaz784ZcqCG-Y7PNLLaLvkAFWV3gL_Anw3TfcxPfELaP',
+    instructions:['Apóyate en antebrazos y puntas de pies','Mantén el cuerpo en línea recta de cabeza a talones','Contrae el abdomen y glúteos sin contener la respiración','Mantén la posición el tiempo indicado sin hundir las caderas'],
+    muscles:     ['Transverso abdominal','Recto abdominal','Glúteos','Erectores'],
+  },
+  {
+    id:          'inclinacion-pelvica',
+    name:        'Inclinación Pélvica',
+    desc:        'Control motor de la pelvis y alivio de presión en L4-L5. Primer ejercicio recomendado en dolor lumbar agudo.',
+    difficulty:  'basico',
+    category:    'flexion',
+    duration:    15,
+    sets:        3,
+    reps:        15,
+    tags:        ['Pelvis','Lumbar','L4-L5'],
+    locked:      false,
+    bestScore:   90,
+    sessions:    9,
+    img:         'https://lh3.googleusercontent.com/aida-public/AB6AXuAmVTWmSo0C_WfVADvAqMU1bq11l3czh5zWxQlBpPIKHm7ig8rrQb0Ihde3KaRign_PtbgvKtrGMV0WODDfT4OBkU7nqGVPL_2zEmiXOtD__IC9INSNgenN3SucjspftHJEiY1hk4z3cjKyHmMsvjXf2IsdXzMdBkXHENlA7rBKRaJMZjtg3cFniHTeL3mTAyzkFMpRmj9gr20FqdnQ7V-f6qgBYsQUPExvC8tW0if0FhIXOwCGMuH_8',
+    instructions:['Acuéstate boca arriba con rodillas flexionadas','Aplana suavemente la espalda baja contra el suelo','Mantén 5 segundos y libera','Repite sin mover las piernas ni la pelvis bruscamente'],
+    muscles:     ['Flexores de cadera','Abdominales','Lumbar'],
+  },
+  {
+    id:          'extension-cadera',
+    name:        'Extensión de Cadera',
+    desc:        'Fortalecimiento avanzado de la cadena posterior. Para pacientes en etapa intermedia-avanzada de recuperación.',
+    difficulty:  'avanzado',
+    category:    'extension',
+    duration:    10,
+    sets:        3,
+    reps:        10,
+    tags:        ['Cadera','Avanzado','Cadena posterior'],
+    locked:      true,
+    bestScore:   0,
+    sessions:    0,
+    img:         null,
+    instructions:[],
+    muscles:     [],
+  },
+  {
+    id:          'rotacion-tronco',
+    name:        'Rotación de Tronco',
+    desc:        'Movilidad rotacional controlada para mejorar la funcionalidad lumbar. Requiere supervisión clínica inicial.',
+    difficulty:  'intermedio',
+    category:    'movilidad',
+    duration:    12,
+    sets:        3,
+    reps:        8,
+    tags:        ['Rotación','Tronco','Supervisado'],
+    locked:      true,
+    bestScore:   0,
+    sessions:    0,
+    img:         null,
+    instructions:[],
+    muscles:     [],
+  },
+];
+
+// ═══════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════
+const diffConfig = {
+  basico:     { label:'Básico',     cls:'diff-basico' },
+  intermedio: { label:'Intermedio', cls:'diff-intermedio' },
+  avanzado:   { label:'Avanzado',   cls:'diff-avanzado' },
+};
+
+function buildSessionURL(ex) {
+  const p = new URLSearchParams({
+    ejercicio: ex.id,
+    nombre:    ex.name,
+    sets:      ex.sets,
+    reps:      ex.reps,
+    duracion:  ex.duration,
+  });
+  return `sesion.html?${p.toString()}`;
+}
+
+function renderCards(exercises) {
+  const grid  = document.getElementById('exercise-grid');
+  const empty = document.getElementById('empty-state');
+  const unlocked = exercises.filter(e => !e.locked);
+
+  // Clear all except empty state
+  [...grid.children].forEach(c => { if (c.id !== 'empty-state') c.remove(); });
+
+  if (exercises.length === 0) {
+    empty.style.display = 'block';
+    document.getElementById('available-count').textContent = '0';
+    return;
+  }
+  empty.style.display = 'none';
+  document.getElementById('available-count').textContent = unlocked.length;
+
+  exercises.forEach(ex => {
+    const dc    = diffConfig[ex.difficulty] || diffConfig.basico;
+    const card  = document.createElement('div');
+    card.className = `ex-card${ex.locked ? ' locked' : ''}`;
+    card.dataset.id = ex.id;
+
+    card.innerHTML = `
+      <!-- Thumbnail -->
+      <div class="thumb">
+        ${ex.img
+          ? `<img src="${ex.img}" alt="${ex.name}" loading="lazy"/>`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#e5eeff;">
+               <span class="material-symbols-outlined" style="font-size:48px;color:#006591;font-variation-settings:'FILL' 1;">${ex.locked?'lock':'fitness_center'}</span>
+             </div>`
+        }
+        <span class="diff-badge ${dc.cls}">${dc.label}</span>
+        ${ex.bestScore > 0 ? `<div style="position:absolute;bottom:10px;left:12px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:9999px;padding:3px 10px;display:flex;align-items:center;gap:5px;">
+          <span class="material-symbols-outlined" style="font-size:14px;color:#fbbf24;font-variation-settings:'FILL' 1;">star</span>
+          <span style="color:#fff;font-size:12px;font-weight:700;">Mejor: ${ex.bestScore}%</span>
+        </div>` : ''}
+      </div>
+
+      <!-- Body -->
+      <div style="padding:20px;display:flex;flex-direction:column;flex:1;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <h3 style="font-size:17px;font-weight:700;color:#0b1c30;line-height:1.2;">${ex.name}</h3>
+          <div style="display:flex;align-items:center;gap:4px;color:#6e7881;flex-shrink:0;margin-left:8px;">
+            <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+            <span style="font-size:12px;font-weight:600;">${ex.duration} min</span>
+          </div>
+        </div>
+
+        <p style="font-size:13px;color:#6e7881;line-height:1.5;flex:1;">${ex.desc}</p>
+
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${ex.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+        </div>
+
+        ${ex.sessions > 0 ? `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="prog-bar" style="flex:1;">
+            <div class="prog-fill" style="width:${ex.bestScore}%;"></div>
+          </div>
+          <span style="font-size:12px;color:#6e7881;white-space:nowrap;">${ex.sessions} sesiones</span>
+        </div>` : ''}
+
+        ${ex.locked
+          ? `<div style="background:#eff4ff;border:1px solid #bae6fd;border-radius:.75rem;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+               <span class="material-symbols-outlined" style="font-size:16px;color:#0369a1;">lock</span>
+               <span style="font-size:13px;color:#0369a1;font-weight:600;">Asignado por tu fisioterapeuta</span>
+             </div>`
+          : `<div style="display:flex;gap:8px;">
+               <button class="btn-iniciar" onclick="showDetail('${ex.id}')" style="flex:0;padding:10px 14px;background:#f8f9ff;border:1px solid #bec8d2;" title="Ver detalles">
+                 <span class="material-symbols-outlined" style="font-size:18px;color:#6e7881;">info</span>
+               </button>
+               <button class="btn-iniciar" style="flex:1;" onclick="startExercise('${ex.id}')">
+                 <span class="material-symbols-outlined" style="font-size:18px;">play_arrow</span>
+                 Iniciar ejercicio
+               </button>
+             </div>`
+        }
+      </div>
+    `;
+    grid.insertBefore(card, document.getElementById('empty-state'));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILTERING
+// ═══════════════════════════════════════════════════════════
+function applyFilters() {
+  const q    = document.getElementById('search-input').value.toLowerCase();
+  const diff = document.getElementById('filter-diff').value;
+  const cat  = document.getElementById('filter-cat').value;
+
+  const filtered = EXERCISES.filter(ex => {
+    const matchQ    = !q    || ex.name.toLowerCase().includes(q) || ex.desc.toLowerCase().includes(q) || ex.tags.some(t => t.toLowerCase().includes(q));
+    const matchDiff = !diff || ex.difficulty === diff;
+    const matchCat  = !cat  || ex.category   === cat;
+    return matchQ && matchDiff && matchCat;
+  });
+
+  renderCards(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('filter-diff').value  = '';
+  document.getElementById('filter-cat').value   = '';
+  document.querySelectorAll('.chip').forEach((c,i) => c.classList.toggle('active', i===0));
+  applyFilters();
+}
+
+function quickFilter(el, cat) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('filter-cat').value = cat;
+  applyFilters();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL MODAL
+// ═══════════════════════════════════════════════════════════
+function showDetail(id) {
+  const ex = EXERCISES.find(e => e.id === id);
+  if (!ex || ex.locked) return;
+
+  const dc = diffConfig[ex.difficulty];
+  document.getElementById('modal-content').innerHTML = `
+    <div style="position:relative;height:200px;overflow:hidden;">
+      ${ex.img ? `<img src="${ex.img}" style="width:100%;height:100%;object-fit:cover;" alt="${ex.name}"/>` : `<div style="width:100%;height:100%;background:#e5eeff;display:flex;align-items:center;justify-content:center;"><span class="material-symbols-outlined" style="font-size:64px;color:#0ea5e9;">fitness_center</span></div>`}
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);"></div>
+      <button onclick="closeDetail()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.4);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <span class="material-symbols-outlined" style="color:#fff;font-size:18px;">close</span>
+      </button>
+      <div style="position:absolute;bottom:16px;left:16px;">
+        <h3 style="color:#fff;font-size:20px;font-weight:800;">${ex.name}</h3>
+        <span class="diff-badge ${dc.cls}" style="position:static;">${dc.label}</span>
+      </div>
+    </div>
+
+    <div style="padding:24px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+        <div style="text-align:center;background:#f8f9ff;border-radius:.75rem;padding:12px;">
+          <p style="font-size:11px;color:#6e7881;font-weight:600;text-transform:uppercase;">Sets</p>
+          <p style="font-size:20px;font-weight:800;color:#0b1c30;">${ex.sets}</p>
+        </div>
+        <div style="text-align:center;background:#f8f9ff;border-radius:.75rem;padding:12px;">
+          <p style="font-size:11px;color:#6e7881;font-weight:600;text-transform:uppercase;">Reps</p>
+          <p style="font-size:20px;font-weight:800;color:#0b1c30;">${ex.reps}</p>
+        </div>
+        <div style="text-align:center;background:#f8f9ff;border-radius:.75rem;padding:12px;">
+          <p style="font-size:11px;color:#6e7881;font-weight:600;text-transform:uppercase;">Duración</p>
+          <p style="font-size:20px;font-weight:800;color:#0b1c30;">${ex.duration}<span style="font-size:12px;"> min</span></p>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:#3e4850;line-height:1.6;margin-bottom:16px;">${ex.desc}</p>
+
+      ${ex.muscles.length ? `
+      <div style="margin-bottom:16px;">
+        <p style="font-size:12px;font-weight:700;text-transform:uppercase;color:#6e7881;margin-bottom:8px;">Músculos trabajados</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${ex.muscles.map(m => `<span style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:9999px;padding:2px 12px;font-size:12px;font-weight:600;">${m}</span>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${ex.instructions.length ? `
+      <div style="margin-bottom:20px;">
+        <p style="font-size:12px;font-weight:700;text-transform:uppercase;color:#6e7881;margin-bottom:10px;">Instrucciones</p>
+        <ol style="padding-left:18px;display:flex;flex-direction:column;gap:7px;">
+          ${ex.instructions.map(i => `<li style="font-size:13px;color:#3e4850;line-height:1.5;">${i}</li>`).join('')}
+        </ol>
+      </div>` : ''}
+
+      ${ex.bestScore > 0 ? `
+      <div style="background:#f8f9ff;border-radius:.75rem;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+        <span class="material-symbols-outlined" style="font-size:20px;color:#fbbf24;font-variation-settings:'FILL' 1;">star</span>
+        <div>
+          <p style="font-size:12px;color:#6e7881;">Mejor puntuación</p>
+          <p style="font-size:18px;font-weight:800;color:#006591;">${ex.bestScore}% · ${ex.sessions} sesiones realizadas</p>
+        </div>
+      </div>` : ''}
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeDetail()" class="btn-secondary" style="flex:1;">Cerrar</button>
+        <button onclick="startExercise('${ex.id}');closeDetail()" class="btn-primary" style="flex:1;">
+          <span class="material-symbols-outlined" style="font-size:16px;">play_arrow</span>
+          Iniciar ahora
+        </button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-detail').style.display = 'flex';
+}
+
+function closeDetail(e) {
+  if (!e || e.target === document.getElementById('modal-detail')) {
+    document.getElementById('modal-detail').style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION TO SESSION
+// ═══════════════════════════════════════════════════════════
+function startExercise(id) {
+  const ex = EXERCISES.find(e => e.id === id);
+  if (!ex || ex.locked) return;
+  window.location.href = buildSessionURL(ex);
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIEW TOGGLE
+// ═══════════════════════════════════════════════════════════
+function setView(v) {
+  const grid = document.getElementById('exercise-grid');
+  const btnGrid = document.getElementById('view-grid');
+  const btnList = document.getElementById('view-list');
+  if (v === 'list') {
+    grid.style.gridTemplateColumns = '1fr';
+    btnList.classList.add('bg-white','border','border-outline-variant');
+    btnList.querySelector('span').style.color = '#006591';
+    btnGrid.classList.remove('bg-white','border','border-outline-variant');
+    btnGrid.querySelector('span').style.color = '#6e7881';
+  } else {
+    grid.style.gridTemplateColumns = '';
+    btnGrid.classList.add('bg-white','border','border-outline-variant');
+    btnGrid.querySelector('span').style.color = '#006591';
+    btnList.classList.remove('bg-white','border','border-outline-variant');
+    btnList.querySelector('span').style.color = '#6e7881';
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────
+renderCards(EXERCISES);
+</script>
+</body>
+</html>

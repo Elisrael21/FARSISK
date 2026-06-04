@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LumbaCare — Resumen de Sesión</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="../assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="../assets/css/lumbacare.css"/>
+  <style>
+    body { background:#f8f9ff; }
+
+    /* ── Score ring ── */
+    #score-ring { transform:rotate(-90deg); }
+    #ring-progress {
+      transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),
+                  stroke .6s ease;
+    }
+
+    /* ── Stat card ── */
+    .stat-card {
+      background:#fff; border:1px solid #e2e8f0; border-radius:1rem;
+      padding:20px; text-align:center;
+      transition:all .2s;
+    }
+    .stat-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.07); }
+
+    /* ── Correction timeline ── */
+    .correction-item {
+      display:flex; align-items:flex-start; gap:14px;
+      padding:12px 14px; border-radius:.75rem;
+      border-left:4px solid; transition:background .15s;
+    }
+    .correction-item:hover { filter:brightness(.97); }
+    .corr-incorrect { background:#fef2f2; border-color:#ef4444; }
+    .corr-adjust    { background:#fffbeb; border-color:#f59e0b; }
+    .corr-correct   { background:#f0fdf4; border-color:#22c55e; }
+
+    /* ── Improvement card ── */
+    .improve-card {
+      background:#fff; border:1px solid #e2e8f0; border-radius:1rem;
+      padding:20px; display:flex; align-items:flex-start; gap:16px;
+      transition:box-shadow .2s;
+    }
+    .improve-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.07); }
+
+    /* ── Progress comparison bar ── */
+    .compare-bar { height:8px; background:#e5eeff; border-radius:4px; overflow:hidden; }
+    .compare-fill { height:100%; border-radius:4px; transition:width 1.2s ease; }
+
+    /* ── Fade-up animation ── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { opacity:0; animation:fadeUp .5s ease-out forwards; }
+
+    /* ── Footer ── */
+    #sticky-footer {
+      position:fixed; bottom:0; left:256px; right:0;
+      background:rgba(255,255,255,.95); backdrop-filter:blur(12px);
+      border-top:1px solid #e2e8f0; padding:16px 32px; z-index:40;
+      display:flex; justify-content:flex-end; gap:12px;
+    }
+    @media(max-width:768px){ #sticky-footer{ left:0; } }
+  </style>
+</head>
+<body>
+<div id="lc-main">
+<div class="p-8 max-w-5xl mx-auto pb-28">
+
+  <!-- HEADER -->
+  <section class="mb-10 fade-up">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="material-symbols-outlined text-secondary" style="font-size:32px;font-variation-settings:'FILL' 1;">check_circle</span>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface">Sesión completada ✅</h2>
+    </div>
+    <p class="font-body-lg text-on-surface-variant" id="header-subtitle">¡Excelente trabajo! Has completado tu rutina.</p>
+  </section>
+
+  <!-- BENTO GRID -->
+  <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+    <!-- ── Score ring (4 cols) ── -->
+    <div class="md:col-span-4 bg-white border border-outline-variant rounded-2xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden fade-up" style="animation-delay:.1s;">
+      <div class="absolute top-4 right-4 opacity-5">
+        <span class="material-symbols-outlined" style="font-size:100px;font-variation-settings:'FILL' 1;">stars</span>
+      </div>
+      <p class="font-label-sm text-on-surface-variant uppercase tracking-wider mb-5">Puntuación Total</p>
+
+      <!-- SVG Ring -->
+      <div style="position:relative;width:180px;height:180px;">
+        <svg id="score-ring" width="180" height="180" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="78" fill="none" stroke="#e5eeff" stroke-width="12"/>
+          <circle cx="90" cy="90" r="78" fill="none" stroke="#22c55e" stroke-width="12"
+            stroke-linecap="round"
+            stroke-dasharray="490.09" stroke-dashoffset="490.09"
+            id="ring-progress"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <span style="font-size:42px;font-weight:800;color:#0b1c30;line-height:1;" id="score-display">—</span>
+          <span style="font-size:12px;color:#6e7881;margin-top:2px;">Rendimiento</span>
+        </div>
+      </div>
+
+      <p class="font-body-sm text-on-surface-variant mt-5" id="score-compare">—</p>
+
+      <!-- Score label badge -->
+      <div id="score-badge" class="mt-3 px-4 py-1.5 rounded-full font-label-sm font-bold"></div>
+    </div>
+
+    <!-- ── Stats (8 cols) ── -->
+    <div class="md:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-4 content-start">
+
+      <div class="stat-card fade-up" style="animation-delay:.15s;">
+        <span class="material-symbols-outlined text-primary mb-2 block" style="font-size:24px;">timer</span>
+        <p class="font-headline-md text-headline-md text-on-surface" id="stat-duration">—</p>
+        <p class="font-label-sm text-on-surface-variant mt-1">Duración</p>
+      </div>
+
+      <div class="stat-card fade-up" style="animation-delay:.2s;">
+        <span class="material-symbols-outlined text-primary mb-2 block" style="font-size:24px;">fitness_center</span>
+        <p class="font-headline-md text-headline-md text-on-surface" id="stat-reps">—</p>
+        <p class="font-label-sm text-on-surface-variant mt-1">Repeticiones</p>
+      </div>
+
+      <div class="stat-card fade-up" style="animation-delay:.25s;">
+        <span class="material-symbols-outlined text-tertiary mb-2 block" style="font-size:24px;">local_fire_department</span>
+        <p class="font-headline-md text-headline-md text-on-surface" id="stat-calories">—</p>
+        <p class="font-label-sm text-on-surface-variant mt-1">Calorías</p>
+      </div>
+
+      <div class="stat-card fade-up" style="animation-delay:.3s;">
+        <span class="material-symbols-outlined text-secondary mb-2 block" style="font-size:24px;">biotech</span>
+        <p class="font-headline-md text-headline-md text-on-surface" id="stat-accuracy">—</p>
+        <p class="font-label-sm text-on-surface-variant mt-1">Precisión</p>
+      </div>
+
+      <!-- Corrections summary (full width) -->
+      <div class="col-span-full bg-white border border-outline-variant rounded-2xl p-6 fade-up" style="animation-delay:.35s;">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="font-headline-sm text-headline-sm text-on-surface">Correcciones de Postura</h3>
+          <span class="font-label-sm px-3 py-1 bg-surface-container rounded-full text-on-surface-variant">Análisis IA en tiempo real</span>
+        </div>
+
+        <div id="corrections-list" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+          <!-- Injected by JS -->
+        </div>
+
+        <div id="no-corrections" class="text-center py-6" style="display:none;">
+          <span class="material-symbols-outlined" style="font-size:32px;color:#22c55e;font-variation-settings:'FILL' 1;">verified</span>
+          <p class="font-body-sm text-secondary font-semibold mt-2">Sin correcciones necesarias — ¡Postura perfecta!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Improvement areas ── -->
+    <div class="md:col-span-12 fade-up" style="animation-delay:.4s;">
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-5">Puntos de mejora</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="improvements-grid">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+
+    <!-- ── Progress comparison ── -->
+    <div class="md:col-span-12 bg-white border border-outline-variant rounded-2xl p-6 fade-up" style="animation-delay:.45s;">
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-5">Comparación con sesión anterior</h3>
+      <div id="comparison-section" class="space-y-4">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+
+    <!-- ── Physio message ── -->
+    <div class="md:col-span-12 bg-primary-container border border-primary-container/20 rounded-2xl p-6 relative overflow-hidden fade-up" style="animation-delay:.5s;">
+      <div class="absolute -top-2 -right-2 opacity-10">
+        <span class="material-symbols-outlined" style="font-size:80px;">medical_information</span>
+      </div>
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">verified</span>
+        <p class="font-label-md text-primary font-bold">Próxima sesión recomendada</p>
+      </div>
+      <p class="font-body-sm text-on-surface-variant" id="next-session-text">
+        Basado en tu rendimiento, continúa con la misma rutina mañana. Tu fisioterapeuta recibirá este reporte automáticamente.
+      </p>
+    </div>
+
+  </div><!-- /bento -->
+</div><!-- /container -->
+</div><!-- /lc-main -->
+
+<!-- FOOTER FIXED -->
+<div id="sticky-footer">
+  <a href="historial.html" class="btn-secondary">
+    <span class="material-symbols-outlined" style="font-size:16px;">history</span>
+    Ver historial completo
+  </a>
+  <a href="ejercicios.html" class="btn-primary">
+    <span class="material-symbols-outlined" style="font-size:16px;">fitness_center</span>
+    Iniciar otro ejercicio
+  </a>
+</div>
+
+<script src="../assets/js/lumbacare-nav.js"></script>
+<script>
+if (!localStorage.getItem('lc_token')) window.location.href = '../login.html';
+LumbaCareNav.init({ role: 'paciente', activePage: 'historial' });
+
+// ═══════════════════════════════════════════════════════════
+// LOAD SESSION DATA
+// ═══════════════════════════════════════════════════════════
+const raw = localStorage.getItem('lc_last_session');
+const session = raw ? JSON.parse(raw) : null;
+
+// Demo data if no session
+const data = session || {
+  score:       87,
+  duration:    924,   // seconds
+  reps:        30,
+  exercise:    'Estiramiento Gato-Camello',
+  date:        new Date().toISOString(),
+  feedbackLog: [
+    { type:'incorrect', message:'Curvatura lumbar excesiva', time:'02:15' },
+    { type:'adjust',    message:'Mantén la espalda más recta', time:'08:40' },
+    { type:'incorrect', message:'Compensación pélvica detectada', time:'12:10' },
+    { type:'correct',   message:'Postura correcta', time:'14:30' },
+    { type:'correct',   message:'Excelente alineación lumbar', time:'15:00' },
+  ],
+};
+
+const prevScore = 82; // mock previous session score
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function formatTime(s) {
+  const m = Math.floor(s/60);
+  return `${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+function estimateCalories(durationSec, score) {
+  return Math.round((durationSec / 60) * 3.2 * (score / 100) + 5);
+}
+function getScoreLabel(s) {
+  if (s >= 85) return { label:'Excelente', color:'#15803d', bg:'#dcfce7' };
+  if (s >= 65) return { label:'Bien',      color:'#0369a1', bg:'#e0f2fe' };
+  if (s >= 45) return { label:'Regular',   color:'#854d0e', bg:'#fef9c3' };
+  return            { label:'A mejorar',   color:'#991b1b', bg:'#fee2e2' };
+}
+
+// ═══════════════════════════════════════════════════════════
+// POPULATE UI
+// ═══════════════════════════════════════════════════════════
+function populate() {
+  const score   = data.score   || 0;
+  const dur     = data.duration || 0;
+  const reps    = data.reps    || 0;
+  const name    = localStorage.getItem('lc_name') || 'tú';
+  const exName  = data.exercise || 'ejercicio';
+  const cal     = estimateCalories(dur, score);
+  const lbl     = getScoreLabel(score);
+
+  // Header
+  document.getElementById('header-subtitle').textContent =
+    `¡Excelente trabajo, ${name.split(' ')[0]}! Completaste: ${exName}`;
+
+  // Score ring
+  const circumference = 490.09;
+  const offset = circumference * (1 - score / 100);
+  const ring = document.getElementById('ring-progress');
+  ring.style.stroke = score >= 85 ? '#22c55e' : score >= 65 ? '#0ea5e9' : score >= 45 ? '#f59e0b' : '#ef4444';
+
+  document.getElementById('score-display').textContent  = score + '%';
+  document.getElementById('score-display').style.color  = lbl.color;
+
+  const diff = score - prevScore;
+  document.getElementById('score-compare').textContent =
+    diff >= 0 ? `↑ ${diff}% por encima de tu promedio semanal` : `↓ ${Math.abs(diff)}% bajo tu promedio semanal`;
+  document.getElementById('score-compare').style.color = diff >= 0 ? '#15803d' : '#991b1b';
+
+  const badge = document.getElementById('score-badge');
+  badge.textContent = lbl.label;
+  badge.style.background = lbl.bg;
+  badge.style.color = lbl.color;
+
+  // Stats
+  document.getElementById('stat-duration').textContent = formatTime(dur);
+  document.getElementById('stat-reps').textContent     = reps + '/30';
+  document.getElementById('stat-calories').textContent = cal + ' kcal';
+  document.getElementById('stat-accuracy').textContent = score + '%';
+
+  // Animate ring after 300ms
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 300);
+
+  // Corrections
+  populateCorrections();
+
+  // Improvements
+  populateImprovements(score);
+
+  // Comparison
+  populateComparison(score);
+}
+
+function populateCorrections() {
+  const log   = data.feedbackLog || [];
+  const list  = document.getElementById('corrections-list');
+  const none  = document.getElementById('no-corrections');
+
+  const incorrect = log.filter(e => e.type !== 'correct');
+
+  if (incorrect.length === 0) {
+    list.style.display = 'none';
+    none.style.display = 'block';
+    return;
+  }
+
+  list.innerHTML = log.slice(0, 8).map(e => {
+    const cls  = { correct:'corr-correct', adjust:'corr-adjust', incorrect:'corr-incorrect' };
+    const icon = { correct:'check_circle', adjust:'warning', incorrect:'cancel' };
+    const col  = { correct:'#15803d', adjust:'#92400e', incorrect:'#991b1b' };
+    return `
+      <div class="correction-item ${cls[e.type] || 'corr-adjust'}">
+        <span style="font-size:13px;font-weight:700;color:${col[e.type]};flex-shrink:0;min-width:40px;">${e.time}</span>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+            <span class="material-symbols-outlined" style="font-size:14px;color:${col[e.type]};font-variation-settings:'FILL' 1;">${icon[e.type]}</span>
+            <p style="font-size:14px;font-weight:600;color:#0b1c30;">${e.message}</p>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+const IMPROVEMENTS_DB = {
+  breath:  { icon:'air',       title:'Control de respiración',    desc:'Inhala al bajar, exhala al subir. Esto estabiliza el core y reduce la presión lumbar.' },
+  speed:   { icon:'speed',     title:'Velocidad de ejecución',    desc:'Reduce la velocidad un 10% para mejorar la propiocepción y el control motor.' },
+  align:   { icon:'straighten',title:'Alineación lumbar',         desc:'Mantén la columna neutral durante toda la ejecución. Activa el core antes de mover.' },
+  hip:     { icon:'accessibility_new', title:'Control pélvico',  desc:'Evita la anteversión pélvica. Activa glúteos y abdominales al mismo tiempo.' },
+  range:   { icon:'open_with', title:'Amplitud de movimiento',    desc:'Incrementa gradualmente el rango. No fuerces posiciones que generen dolor.' },
+  perfect: { icon:'verified',  title:'¡Ejecución perfecta!',      desc:'Mantén esta consistencia. Tu fisioterapeuta recibirá el reporte positivo.' },
+};
+
+function populateImprovements(score) {
+  const grid = document.getElementById('improvements-grid');
+  let keys = [];
+
+  if (score >= 85)      keys = ['perfect', 'breath'];
+  else if (score >= 70) keys = ['breath',  'speed'];
+  else if (score >= 50) keys = ['align',   'breath', 'speed'];
+  else                  keys = ['align',   'hip',    'speed'];
+
+  // Also add from actual feedback log
+  const log = data.feedbackLog || [];
+  if (log.some(e => e.message.toLowerCase().includes('pelv')))  keys.unshift('hip');
+  if (log.some(e => e.message.toLowerCase().includes('respir'))) keys.unshift('breath');
+  keys = [...new Set(keys)].slice(0, 3);
+
+  const colors = ['#006591','#006b5f','#8a5100'];
+  const bgs    = ['#e0f2fe','#f0fdf4','#fff8e1'];
+
+  grid.innerHTML = keys.map((k,i) => {
+    const imp = IMPROVEMENTS_DB[k];
+    return `
+      <div class="improve-card" style="animation-delay:${.45+i*.08}s;">
+        <div style="width:52px;height:52px;border-radius:.75rem;background:${bgs[i%3]};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          <span class="material-symbols-outlined" style="font-size:26px;color:${colors[i%3]};">${imp.icon}</span>
+        </div>
+        <div>
+          <p style="font-size:15px;font-weight:700;color:#0b1c30;margin-bottom:4px;">${imp.title}</p>
+          <p style="font-size:13px;color:#6e7881;line-height:1.5;">${imp.desc}</p>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function populateComparison(score) {
+  const section = document.getElementById('comparison-section');
+  const metrics = [
+    { label:'Puntuación general', current:score,     prev:prevScore,    unit:'%' },
+    { label:'Correcciones',       current:Math.max(0, 5 - Math.floor(score/20)), prev:5, unit:' avisos', reverse:true },
+    { label:'Reps completadas',   current:data.reps||0, prev:Math.max(1,((data.reps||0)-3)), unit:` / ${data.reps||30}` },
+  ];
+
+  section.innerHTML = metrics.map(m => {
+    const isImproved = m.reverse ? m.current <= m.prev : m.current >= m.prev;
+    const diff = m.current - m.prev;
+    const diffStr = (diff >= 0 ? '+' : '') + diff + (m.unit.includes('%') ? '%' : '');
+    const maxVal = Math.max(m.current, m.prev, 1);
+    return `
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:14px;font-weight:600;color:#0b1c30;">${m.label}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;color:#6e7881;">Anterior: ${m.prev}${m.unit}</span>
+            <span style="font-size:13px;font-weight:700;color:${isImproved?'#15803d':'#991b1b'};">${diffStr}</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;">
+          <div>
+            <p style="font-size:11px;color:#6e7881;margin-bottom:4px;">Sesión anterior</p>
+            <div class="compare-bar">
+              <div class="compare-fill" style="width:${(m.prev/maxVal)*100}%;background:#bec8d2;"></div>
+            </div>
+          </div>
+          <div>
+            <p style="font-size:11px;color:#006591;font-weight:600;margin-bottom:4px;">Esta sesión</p>
+            <div class="compare-bar">
+              <div class="compare-fill" style="width:${(m.current/maxVal)*100}%;background:${isImproved?'#006591':'#ef4444'};"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('<hr style="border:none;border-top:1px solid #f0f4f8;"/>');
+}
+
+// ── Run ────────────────────────────────────────────────────
+populate();
+</script>
+
+</body>
+</html>

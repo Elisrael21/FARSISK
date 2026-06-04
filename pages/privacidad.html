@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Política de Privacidad — FARSISK</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="../assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="../assets/css/lumbacare.css"/>
+  <style>
+    .prose h2 { font-size:20px; font-weight:700; color:#0b1c30; margin:36px 0 12px; }
+    .prose h3 { font-size:16px; font-weight:600; color:#0b1c30; margin:24px 0 8px; }
+    .prose p  { font-size:15px; color:#3e4850; line-height:1.7; margin:0 0 14px; }
+    .prose ul { margin:0 0 14px; padding-left:20px; }
+    .prose ul li { font-size:15px; color:#3e4850; line-height:1.7; margin-bottom:6px; }
+    .prose a  { color:#006591; text-decoration:underline; }
+    .data-table { width:100%; border-collapse:collapse; margin:16px 0; font-size:14px; }
+    .data-table th { background:#e5eeff; color:#0b1c30; font-weight:600; padding:10px 14px; text-align:left; border:1px solid #bec8d2; }
+    .data-table td { padding:9px 14px; border:1px solid #e2e8f0; color:#3e4850; vertical-align:top; }
+    .data-table tr:nth-child(even) td { background:#f8faff; }
+    .toc-link { font-size:14px; color:#006591; text-decoration:none; display:block; padding:4px 0; border-bottom:1px solid #f0f4f8; }
+    .toc-link:hover { color:#004c6e; }
+    .right-badge { display:inline-flex; align-items:center; gap:6px; background:#e0f2fe; color:#0369a1; border-radius:8px; padding:6px 12px; font-size:13px; font-weight:600; margin:4px 4px 4px 0; }
+  </style>
+</head>
+<body style="background:#f8f9ff;">
+
+  <nav class="w-full sticky top-0 z-50 bg-white border-b border-outline-variant" style="box-shadow:0 1px 3px rgba(0,0,0,.06);">
+    <div class="flex items-center justify-between px-8 py-4 max-w-5xl mx-auto">
+      <a href="../index.html" class="flex items-center gap-2 no-underline">
+        <div class="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-sm" style="font-variation-settings:'FILL' 1;">health_and_safety</span>
+        </div>
+        <span class="font-headline-sm font-bold text-primary">FARSISK</span>
+      </a>
+      <a href="../login.html" class="btn-primary" style="font-size:13px;padding:8px 18px;">Iniciar sesión</a>
+    </div>
+  </nav>
+
+  <div class="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-4 gap-12">
+
+    <aside class="lg:col-span-1 hidden lg:block">
+      <div class="sticky top-24">
+        <p class="font-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Contenido</p>
+        <nav>
+          <a href="#responsable"   class="toc-link">1. Responsable</a>
+          <a href="#datos"         class="toc-link">2. Datos que recopilamos</a>
+          <a href="#video"         class="toc-link">3. Datos de video/cámara</a>
+          <a href="#finalidades"   class="toc-link">4. Finalidades</a>
+          <a href="#base-legal"    class="toc-link">5. Base legal</a>
+          <a href="#compartimos"   class="toc-link">6. Con quién compartimos</a>
+          <a href="#retencion"     class="toc-link">7. Retención de datos</a>
+          <a href="#derechos"      class="toc-link">8. Tus derechos (ARCO)</a>
+          <a href="#cookies"       class="toc-link">9. Cookies</a>
+          <a href="#menores"       class="toc-link">10. Menores de edad</a>
+          <a href="#seguridad"     class="toc-link">11. Seguridad</a>
+          <a href="#contacto"      class="toc-link">12. Contacto</a>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="lg:col-span-3">
+
+      <div class="mb-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm mb-4">
+          <span class="material-symbols-outlined text-sm">privacy_tip</span>
+          Documento legal
+        </div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface mb-3">Política de Privacidad</h1>
+        <p class="font-body-sm text-on-surface-variant">
+          Última actualización: <strong>1 de enero de 2025</strong> ·
+          Aplica a todos los usuarios de LumbaCare
+        </p>
+        <div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200">
+          <p class="font-body-sm text-blue-800">
+            En LumbaCare nos tomamos en serio la privacidad de tus datos, especialmente los de salud.
+            Este documento explica qué datos recopilamos, cómo los usamos y cuáles son tus derechos.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tus derechos en resumen -->
+      <div class="mb-8 p-5 rounded-2xl bg-surface-container-low border border-outline-variant">
+        <p class="font-label-md text-on-surface mb-3">Tus derechos de un vistazo:</p>
+        <div class="flex flex-wrap gap-2">
+          <span class="right-badge"><span class="material-symbols-outlined text-base">visibility</span>Acceder a tus datos</span>
+          <span class="right-badge"><span class="material-symbols-outlined text-base">edit</span>Rectificar datos</span>
+          <span class="right-badge"><span class="material-symbols-outlined text-base">delete</span>Cancelar/Eliminar</span>
+          <span class="right-badge"><span class="material-symbols-outlined text-base">block</span>Oponerte al uso</span>
+          <span class="right-badge"><span class="material-symbols-outlined text-base">download</span>Portabilidad</span>
+        </div>
+      </div>
+
+      <article class="prose">
+
+        <h2 id="responsable">1. Responsable del Tratamiento</h2>
+        <p>El responsable del tratamiento de tus datos personales es:</p>
+        <ul>
+          <li><strong>Nombre/Razón social:</strong> [Nombre legal de la empresa — completar]</li>
+          <li><strong>Domicilio:</strong> [Dirección — completar]</li>
+          <li><strong>Correo de privacidad:</strong> privacidad@lumbacare.com</li>
+          <li><strong>Teléfono:</strong> [Completar]</li>
+        </ul>
+
+        <h2 id="datos">2. Datos Personales que Recopilamos</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Categoría</th>
+              <th>Datos específicos</th>
+              <th>Obligatorio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Identificación</strong></td>
+              <td>Nombre completo, correo electrónico, contraseña (cifrada)</td>
+              <td>Sí</td>
+            </tr>
+            <tr>
+              <td><strong>Datos de salud</strong></td>
+              <td>Edad, peso, talla, historial de ejercicios, puntuaciones de postura, feedback recibido</td>
+              <td>Sí, para el servicio</td>
+            </tr>
+            <tr>
+              <td><strong>Datos de sesión</strong></td>
+              <td>Duración, repeticiones, puntuación de precisión, correcciones posturales, timestamps</td>
+              <td>Sí, automático</td>
+            </tr>
+            <tr>
+              <td><strong>Contactos de emergencia</strong></td>
+              <td>Nombre y teléfono de hasta 2 contactos (datos de terceros con tu autorización)</td>
+              <td>No (opcional)</td>
+            </tr>
+            <tr>
+              <td><strong>Datos técnicos</strong></td>
+              <td>IP, tipo de dispositivo, navegador, sistema operativo, logs de sesión</td>
+              <td>Automático</td>
+            </tr>
+            <tr>
+              <td><strong>Cédula profesional</strong></td>
+              <td>Solo para fisioterapeutas, para verificación de identidad profesional</td>
+              <td>Sí (fisios)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="video">3. Datos de Video y Cámara — Importante</h2>
+        <div class="p-4 rounded-xl border-l-4 border-secondary bg-green-50 my-4">
+          <p style="color:#166534; margin:0;"><strong>✓ Tu video NUNCA se almacena en nuestros servidores.</strong></p>
+        </div>
+        <p>LumbaCare utiliza MediaPipe.js, una tecnología que procesa las imágenes de tu cámara <strong>directamente en tu dispositivo (localmente)</strong>. El proceso es:</p>
+        <ul>
+          <li>Tu cámara captura imágenes en tiempo real</li>
+          <li>MediaPipe.js analiza la imagen <em>en tu propio dispositivo</em> y extrae coordenadas numéricas de articulaciones (keypoints)</li>
+          <li>Solo se envían esos números (aproximadamente 200 bytes cada 100ms) a nuestros servidores para el análisis de IA</li>
+          <li>Las imágenes de video nunca salen de tu dispositivo</li>
+        </ul>
+
+        <h2 id="finalidades">4. Finalidades del Tratamiento</h2>
+        <ul>
+          <li><strong>Prestación del servicio:</strong> Analizar tu postura y brindar retroalimentación en tiempo real</li>
+          <li><strong>Seguimiento clínico:</strong> Generar reportes de progreso para tu fisioterapeuta</li>
+          <li><strong>Seguridad:</strong> Activar el sistema de alertas de emergencia cuando se detecten posturas de riesgo</li>
+          <li><strong>Mejora del servicio:</strong> Analizar métricas agregadas y anónimas para mejorar el modelo de IA</li>
+          <li><strong>Comunicaciones:</strong> Enviarte notificaciones sobre tu plan de rehabilitación y actualizaciones importantes</li>
+          <li><strong>Cumplimiento legal:</strong> Atender requerimientos de autoridades competentes</li>
+        </ul>
+
+        <h2 id="base-legal">5. Base Legal del Tratamiento</h2>
+        <ul>
+          <li><strong>Consentimiento:</strong> Para el tratamiento de datos de salud y contactos de emergencia</li>
+          <li><strong>Ejecución de contrato:</strong> Para la prestación del servicio de rehabilitación</li>
+          <li><strong>Interés legítimo:</strong> Para mejorar la seguridad y funcionalidad del servicio</li>
+          <li><strong>Obligación legal:</strong> Para cumplir con requerimientos de autoridades</li>
+        </ul>
+
+        <h2 id="compartimos">6. Con Quién Compartimos tus Datos</h2>
+        <table class="data-table">
+          <thead>
+            <tr><th>Destinatario</th><th>Datos compartidos</th><th>Propósito</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tu fisioterapeuta asignado</td>
+              <td>Historial de sesiones, progreso, reportes</td>
+              <td>Seguimiento clínico</td>
+            </tr>
+            <tr>
+              <td>Contactos de emergencia</td>
+              <td>Alerta + ubicación aproximada</td>
+              <td>Solo en caso de emergencia</td>
+            </tr>
+            <tr>
+              <td>Twilio / proveedor SMS</td>
+              <td>Número de teléfono + mensaje de alerta</td>
+              <td>Envío de alertas de emergencia</td>
+            </tr>
+            <tr>
+              <td>Proveedor de hosting</td>
+              <td>Datos cifrados</td>
+              <td>Infraestructura del servicio</td>
+            </tr>
+          </tbody>
+        </table>
+        <p><strong>No vendemos ni cedemos tus datos a terceros con fines comerciales.</strong></p>
+
+        <h2 id="retencion">7. Retención de Datos</h2>
+        <ul>
+          <li><strong>Cuenta activa:</strong> Mientras mantengas tu cuenta</li>
+          <li><strong>Tras cancelar cuenta:</strong> 12 meses para cumplimiento legal, luego eliminación</li>
+          <li><strong>Datos de salud / sesiones:</strong> Máximo 5 años o hasta que solicites eliminación</li>
+          <li><strong>Logs técnicos:</strong> 90 días</li>
+          <li><strong>Copias de seguridad:</strong> Máximo 30 días adicionales tras eliminación</li>
+        </ul>
+
+        <h2 id="derechos">8. Tus Derechos (Derechos ARCO)</h2>
+        <p>De conformidad con la legislación aplicable, tienes derecho a:</p>
+        <ul>
+          <li><strong>Acceso:</strong> Conocer qué datos personales tenemos sobre ti</li>
+          <li><strong>Rectificación:</strong> Corregir datos inexactos o incompletos</li>
+          <li><strong>Cancelación:</strong> Solicitar la eliminación de tus datos</li>
+          <li><strong>Oposición:</strong> Oponerte al tratamiento de tus datos para ciertos fines</li>
+          <li><strong>Portabilidad:</strong> Recibir una copia de tus datos en formato descargable</li>
+        </ul>
+        <p>Para ejercer estos derechos, envía un correo a <strong>privacidad@lumbacare.com</strong> con asunto "Derechos ARCO" e incluye una copia de tu identificación. Responderemos en un plazo máximo de <strong>20 días hábiles</strong>.</p>
+
+        <h2 id="cookies">9. Cookies y Almacenamiento Local</h2>
+        <p>LumbaCare utiliza:</p>
+        <ul>
+          <li><strong>localStorage:</strong> Para mantener tu sesión activa si activas "Recordarme"</li>
+          <li><strong>Cookies de sesión:</strong> Para autenticación y seguridad</li>
+          <li><strong>No usamos</strong> cookies de rastreo publicitario ni compartimos datos con redes de publicidad</li>
+        </ul>
+
+        <h2 id="menores">10. Menores de Edad</h2>
+        <p>LumbaCare no está diseñado para menores de 18 años sin supervisión. Si eres padre/madre y detectas que tu hijo menor ha creado una cuenta sin autorización, contáctanos en privacidad@lumbacare.com para eliminar la cuenta.</p>
+
+        <h2 id="seguridad">11. Medidas de Seguridad</h2>
+        <ul>
+          <li>Contraseñas cifradas con bcrypt (hash + salt)</li>
+          <li>Transmisión de datos bajo protocolo HTTPS/TLS</li>
+          <li>Tokens JWT con expiración corta</li>
+          <li>Datos de salud almacenados en base de datos cifrada</li>
+          <li>Acceso a datos de producción restringido al personal autorizado</li>
+          <li>Copias de seguridad cifradas</li>
+        </ul>
+
+        <h2 id="contacto">12. Contacto y Quejas</h2>
+        <p>Para cualquier duda sobre tu privacidad:</p>
+        <ul>
+          <li>📧 <strong>privacidad@lumbacare.com</strong></li>
+          <li>📍 <strong>[Dirección — completar]</strong></li>
+        </ul>
+        <p>Si consideras que el tratamiento de tus datos no es adecuado, puedes presentar una queja ante la autoridad de protección de datos de tu país.</p>
+
+      </article>
+
+      <div class="mt-12 pt-8 border-t border-outline-variant flex justify-between items-center">
+        <a href="terminos.html" class="btn-secondary">
+          <span class="material-symbols-outlined text-base">arrow_back</span>
+          Términos de Servicio
+        </a>
+        <a href="../login.html" class="btn-primary">
+          Volver al login
+          <span class="material-symbols-outlined text-base">login</span>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <footer class="border-t border-outline-variant py-6 mt-8">
+    <p class="text-center font-body-sm text-on-surface-variant">© 2024 LumbaCare · <a href="terminos.html" class="text-primary hover:underline">Términos</a></p>
+  </footer>
+
+</body>
+</html>

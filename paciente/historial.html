@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FARSISK — Mi Historial</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="../assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="../assets/css/lumbacare.css"/>
+  <style>
+    body { background:#f8f9ff; }
+    .session-row { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; overflow:hidden; transition:box-shadow .2s; }
+    .session-row:hover { box-shadow:0 4px 20px rgba(0,101,145,.08); }
+    .session-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; cursor:pointer; gap:16px; flex-wrap:wrap; }
+    .session-details { border-top:1px solid #f0f4f8; background:#fafbff; padding:20px; display:none; }
+    .session-details.open { display:block; animation:fadeIn .2s ease-out; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .score-pill { padding:4px 12px; border-radius:8px; font-size:12px; font-weight:700; }
+    .score-exc  { background:#dcfce7; color:#15803d; }
+    .score-good { background:#e0f2fe; color:#0369a1; }
+    .score-avg  { background:#fef9c3; color:#854d0e; }
+    .score-low  { background:#fee2e2; color:#991b1b; }
+    .prog-bar { height:6px; background:#e5eeff; border-radius:3px; overflow:hidden; }
+    .prog-fill { height:100%; border-radius:3px; }
+    .timeline-dot { width:44px; height:44px; border-radius:50%; background:#006591; color:#fff; font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 0 0 4px #e5eeff; }
+    .correction-badge { padding:6px 10px; border-radius:7px; font-size:12px; border-left:3px solid; }
+    .corr-r { background:#fef2f2; border-color:#ef4444; color:#991b1b; }
+    .corr-a { background:#fffbeb; border-color:#f59e0b; color:#92400e; }
+    .chip { padding:5px 14px; border-radius:9999px; border:1.5px solid #bec8d2; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; background:#fff; color:#3e4850; }
+    .chip.active { background:#006591; color:#fff; border-color:#006591; }
+  </style>
+</head>
+<body>
+<div id="lc-main">
+<div class="p-8 max-w-5xl mx-auto">
+
+  <!-- HEADER -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface mb-1">Mi Historial</h2>
+      <p class="font-body-sm text-on-surface-variant">Revisa tu progreso y desempeño en sesiones pasadas.</p>
+    </div>
+    <button onclick="exportHistory()" class="btn-secondary self-start">
+      <span class="material-symbols-outlined text-base">download</span>
+      Exportar CSV
+    </button>
+  </header>
+
+  <!-- FILTER BAR -->
+  <div class="bg-white border border-outline-variant rounded-2xl p-5 mb-8">
+    <div class="flex flex-wrap gap-4 items-end mb-4">
+      <div class="flex-1 min-w-40">
+        <label class="font-label-sm text-on-surface-variant block mb-1.5">Rango de fechas</label>
+        <select id="filter-date" class="input-field h-10 text-sm" onchange="applyFilters()">
+          <option value="30">Últimos 30 días</option>
+          <option value="90">Últimos 3 meses</option>
+          <option value="365">Año 2024</option>
+          <option value="all">Todo</option>
+        </select>
+      </div>
+      <div class="flex-1 min-w-40">
+        <label class="font-label-sm text-on-surface-variant block mb-1.5">Ejercicio</label>
+        <select id="filter-exercise" class="input-field h-10 text-sm" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option value="Puente Lumbar">Puente Lumbar</option>
+          <option value="Gato-Camello">Gato-Camello</option>
+          <option value="Plancha Frontal">Plancha Frontal</option>
+          <option value="Inclinación Pélvica">Inclinación Pélvica</option>
+        </select>
+      </div>
+      <div class="flex-1 min-w-40">
+        <label class="font-label-sm text-on-surface-variant block mb-1.5">Puntuación</label>
+        <select id="filter-score" class="input-field h-10 text-sm" onchange="applyFilters()">
+          <option value="">Todas</option>
+          <option value="exc">Excelente (90+)</option>
+          <option value="good">Bien (70–89)</option>
+          <option value="low">Mejorar (&lt;70)</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 pt-3 border-t border-outline-variant">
+      <span class="font-label-sm text-on-surface-variant self-center">Ver:</span>
+      <button class="chip active" onclick="quickPeriod(this,'30')">30 días</button>
+      <button class="chip" onclick="quickPeriod(this,'90')">3 meses</button>
+      <button class="chip" onclick="quickPeriod(this,'365')">1 año</button>
+      <button class="chip" onclick="quickPeriod(this,'all')">Todo</button>
+    </div>
+  </div>
+
+  <!-- MINI STATS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="mini-stats">
+    <div class="bg-white border border-outline-variant rounded-xl p-4 text-center">
+      <p class="font-label-sm text-on-surface-variant mb-1">Sesiones</p>
+      <p class="font-headline-md text-on-surface" id="stat-total">—</p>
+    </div>
+    <div class="bg-white border border-outline-variant rounded-xl p-4 text-center">
+      <p class="font-label-sm text-on-surface-variant mb-1">Score promedio</p>
+      <p class="font-headline-md text-secondary" id="stat-avg">—</p>
+    </div>
+    <div class="bg-white border border-outline-variant rounded-xl p-4 text-center">
+      <p class="font-label-sm text-on-surface-variant mb-1">Tiempo total</p>
+      <p class="font-headline-md text-on-surface" id="stat-time">—</p>
+    </div>
+    <div class="bg-white border border-outline-variant rounded-xl p-4 text-center">
+      <p class="font-label-sm text-on-surface-variant mb-1">Mejor score</p>
+      <p class="font-headline-md text-primary" id="stat-best">—</p>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div id="timeline" class="space-y-10"></div>
+
+  <div id="empty-state" style="display:none;" class="text-center py-16">
+    <span class="material-symbols-outlined" style="font-size:48px;color:#bec8d2;">history_toggle_off</span>
+    <p class="font-headline-sm text-on-surface-variant mt-3">Sin sesiones en este período</p>
+    <a href="ejercicios.html" class="btn-primary mt-4 inline-flex">Iniciar primera sesión</a>
+  </div>
+
+</div>
+</div>
+
+<script src="../assets/js/lumbacare-nav.js"></script>
+<script>
+if (!localStorage.getItem('lc_token')) window.location.href = '../login.html';
+LumbaCareNav.init({ role:'paciente', activePage:'historial' });
+
+// ── Session data ────────────────────────────────────────────
+const SESSIONS = [
+  { id:1, date:'2024-10-24', dow:'Jue', day:'24', month:'Octubre 2024', exercise:'Gato-Camello',         duration:12, reps:10, score:95, corrections:[{t:'02:15',msg:'Inclina menos la espalda',type:'a'}], bestMoment:'Minuto 08:20 — Postura perfecta 45 seg.', critMoment:'Rep 9 — leve compensación' },
+  { id:2, date:'2024-10-22', dow:'Mar', day:'22', month:'Octubre 2024', exercise:'Puente Lumbar',         duration:12, reps:15, score:88, corrections:[{t:'02:15',msg:'Alineación pélvica incorrecta',type:'r'},{t:'05:40',msg:'Rango excedido',type:'a'}], bestMoment:'Minuto 07:30 — 3 reps perfectas consecutivas.', critMoment:'Rep 12 — fatiga detectada' },
+  { id:3, date:'2024-10-19', dow:'Sáb', day:'19', month:'Octubre 2024', exercise:'Plancha Frontal',       duration:8,  reps:4,  score:72, corrections:[{t:'01:10',msg:'Caderas por encima de la línea',type:'r'},{t:'03:50',msg:'Activa más el core',type:'a'},{t:'06:20',msg:'Respira de forma continua',type:'a'}], bestMoment:'Minuto 04:10 — Alineación correcta.', critMoment:'Set 3 — postura cedió' },
+  { id:4, date:'2024-10-15', dow:'Mar', day:'15', month:'Octubre 2024', exercise:'Inclinación Pélvica',   duration:15, reps:15, score:90, corrections:[{t:'04:00',msg:'Velocidad excesiva',type:'a'}], bestMoment:'Últimas 5 reps perfectas.', critMoment:'Ninguno relevante' },
+  { id:5, date:'2024-09-28', dow:'Sáb', day:'28', month:'Septiembre 2024', exercise:'Gato-Camello',      duration:10, reps:10, score:82, corrections:[{t:'03:20',msg:'Rango lumbar bajo',type:'a'}], bestMoment:'Reps 6-8 excelentes.', critMoment:'Rep 10 — rigidez' },
+  { id:6, date:'2024-09-24', dow:'Mar', day:'24', month:'Septiembre 2024', exercise:'Puente Lumbar',      duration:12, reps:15, score:78, corrections:[{t:'01:45',msg:'Compensación de cadera',type:'r'},{t:'07:10',msg:'Activa glúteos',type:'a'}], bestMoment:'Minuto 05:00.', critMoment:'Inicio sesión — tensión alta' },
+  { id:7, date:'2024-09-18', dow:'Mié', day:'18', month:'Septiembre 2024', exercise:'Inclinación Pélvica',duration:14, reps:15, score:94, corrections:[], bestMoment:'Sesión completa sin correcciones.', critMoment:'—' },
+];
+
+function scoreClass(s) {
+  if (s >= 90) return 'score-exc';
+  if (s >= 70) return 'score-good';
+  if (s >= 50) return 'score-avg';
+  return 'score-low';
+}
+function progColor(s) {
+  if (s >= 90) return '#22c55e';
+  if (s >= 70) return '#006591';
+  if (s >= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
+// ── Render ──────────────────────────────────────────────────
+function render(sessions) {
+  const tl    = document.getElementById('timeline');
+  const empty = document.getElementById('empty-state');
+  tl.innerHTML = '';
+
+  // Update mini stats
+  if (sessions.length) {
+    const avg  = Math.round(sessions.reduce((a,s)=>a+s.score,0)/sessions.length);
+    const mins = sessions.reduce((a,s)=>a+s.duration,0);
+    const best = Math.max(...sessions.map(s=>s.score));
+    document.getElementById('stat-total').textContent = sessions.length;
+    document.getElementById('stat-avg').textContent   = avg + '%';
+    document.getElementById('stat-time').textContent  = mins >= 60 ? `${Math.floor(mins/60)}h ${mins%60}m` : `${mins} min`;
+    document.getElementById('stat-best').textContent  = best + '%';
+    empty.style.display = 'none';
+  } else {
+    empty.style.display = 'block';
+    ['stat-total','stat-avg','stat-time','stat-best'].forEach(id => document.getElementById(id).textContent='—');
+    return;
+  }
+
+  // Group by month
+  const groups = {};
+  sessions.forEach(s => {
+    if (!groups[s.month]) groups[s.month] = [];
+    groups[s.month].push(s);
+  });
+
+  Object.entries(groups).forEach(([month, list]) => {
+    const [monthName, year] = month.split(' ');
+    const monthNum = {'Enero':1,'Febrero':2,'Marzo':3,'Abril':4,'Mayo':5,'Junio':6,'Julio':7,'Agosto':8,'Septiembre':9,'Octubre':10,'Noviembre':11,'Diciembre':12}[monthName] || 10;
+
+    const section = document.createElement('section');
+    section.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div class="timeline-dot">${String(monthNum).padStart(2,'0')}</div>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface">${month}</h3>
+        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+        <span class="font-label-sm text-on-surface-variant">${list.length} sesión${list.length!==1?'es':''}</span>
+      </div>
+      <div style="margin-left:58px;display:flex;flex-direction:column;gap:10px;">
+        ${list.map(s => buildRow(s)).join('')}
+      </div>
+    `;
+    tl.appendChild(section);
+  });
+}
+
+function buildRow(s) {
+  const sc  = scoreClass(s.score);
+  const pc  = progColor(s.score);
+  const corrections = s.corrections.map(c => `
+    <div class="correction-badge ${c.type==='r'?'corr-r':'corr-a'}">
+      <span style="font-size:11px;font-weight:700;margin-right:6px;">${c.t}</span>${c.msg}
+    </div>`).join('');
+
+  return `
+  <div class="session-row">
+    <div class="session-header" onclick="toggleRow(${s.id})">
+      <div style="display:flex;align-items:center;gap:20px;flex:1;min-width:0;">
+        <!-- Date -->
+        <div style="text-align:center;min-width:48px;">
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6e7881;">${s.dow}</p>
+          <p style="font-size:22px;font-weight:800;color:#0b1c30;line-height:1;">${s.day}</p>
+        </div>
+        <!-- Exercise -->
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:15px;font-weight:700;color:#0b1c30;">${s.exercise}</p>
+          <div style="display:flex;gap:14px;margin-top:3px;">
+            <span style="font-size:12px;color:#6e7881;display:flex;align-items:center;gap:4px;">
+              <span class="material-symbols-outlined" style="font-size:14px;">schedule</span>${s.duration} min
+            </span>
+            <span style="font-size:12px;color:#6e7881;display:flex;align-items:center;gap:4px;">
+              <span class="material-symbols-outlined" style="font-size:14px;">fitness_center</span>${s.reps} reps
+            </span>
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div style="flex:1;max-width:180px;display:none;" class="md:block-force">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:11px;color:#6e7881;">Precisión</span>
+            <span style="font-size:11px;font-weight:700;color:${pc};">${s.score}%</span>
+          </div>
+          <div class="prog-bar">
+            <div class="prog-fill" style="width:${s.score}%;background:${pc};"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Score + toggle -->
+      <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
+        <span class="score-pill ${sc}">${s.score}/100</span>
+        <button style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;color:#006591;font-size:13px;font-weight:600;" id="toggle-${s.id}">
+          Ver detalles
+          <span class="material-symbols-outlined" style="font-size:16px;" id="icon-${s.id}">expand_more</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="session-details" id="details-${s.id}">
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
+        <!-- Corrections -->
+        <div>
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#6e7881;margin-bottom:10px;">Correcciones detectadas</p>
+          ${s.corrections.length
+            ? `<div style="display:flex;flex-direction:column;gap:6px;">${corrections}</div>`
+            : `<div style="padding:12px;background:#f0fdf4;border-radius:.5rem;border:1px solid #bbf7d0;">
+                 <p style="font-size:13px;color:#15803d;font-weight:600;">✓ Sin correcciones — ¡Postura perfecta!</p>
+               </div>`
+          }
+        </div>
+        <!-- Insights -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="background:#dcfce7;border-radius:.5rem;padding:6px;flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#15803d;font-variation-settings:'FILL' 1;">star</span>
+            </div>
+            <div>
+              <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6e7881;margin-bottom:3px;">Mejor momento</p>
+              <p style="font-size:13px;font-weight:600;color:#0b1c30;">${s.bestMoment}</p>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="background:#fee2e2;border-radius:.5rem;padding:6px;flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#991b1b;font-variation-settings:'FILL' 1;">warning</span>
+            </div>
+            <div>
+              <p style="font-size:10px;font-weight:700;text-transform:uppercase;color:#6e7881;margin-bottom:3px;">Punto crítico</p>
+              <p style="font-size:13px;font-weight:600;color:#0b1c30;">${s.critMoment}</p>
+            </div>
+          </div>
+          <div style="grid-column:1/-1;">
+            <a href="resumen.html?sesion=${s.id}" style="display:flex;align-items:center;gap:8px;background:#e5eeff;border-radius:.75rem;padding:10px 14px;text-decoration:none;">
+              <span class="material-symbols-outlined" style="font-size:18px;color:#006591;">analytics</span>
+              <span style="font-size:13px;font-weight:600;color:#006591;">Ver resumen completo de esta sesión</span>
+              <span class="material-symbols-outlined" style="font-size:16px;color:#006591;margin-left:auto;">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleRow(id) {
+  const det  = document.getElementById(`details-${id}`);
+  const icon = document.getElementById(`icon-${id}`);
+  const open = det.classList.contains('open');
+  det.classList.toggle('open', !open);
+  icon.textContent = open ? 'expand_more' : 'expand_less';
+}
+
+// ── Filters ─────────────────────────────────────────────────
+function applyFilters() {
+  const days = document.getElementById('filter-date').value;
+  const ex   = document.getElementById('filter-exercise').value;
+  const sc   = document.getElementById('filter-score').value;
+
+  let filtered = SESSIONS.filter(s => {
+    const date   = new Date(s.date);
+    const cutoff = days === 'all' ? new Date('2000-01-01') : new Date(Date.now() - parseInt(days)*86400000);
+    const inDate = date >= cutoff;
+    const inEx   = !ex || s.exercise === ex;
+    const inSc   = !sc || (sc==='exc'&&s.score>=90)||(sc==='good'&&s.score>=70&&s.score<90)||(sc==='low'&&s.score<70);
+    return inDate && inEx && inSc;
+  });
+  render(filtered);
+}
+
+function quickPeriod(el, val) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('filter-date').value = val;
+  applyFilters();
+}
+
+function exportHistory() {
+  const csv = ['Fecha,Ejercicio,Duración(min),Reps,Score',
+    ...SESSIONS.map(s => `${s.date},${s.exercise},${s.duration},${s.reps},${s.score}`)
+  ].join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'historial_lumbacare.csv';
+  a.click();
+}
+
+// Init
+render(SESSIONS);
+</script>
+</body>
+</html>

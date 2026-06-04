@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FARSISK — Mis Reportes</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="../assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="../assets/css/lumbacare.css"/>
+  <style>
+    body { background:#f8f9ff; }
+    .glass-card { background:#fff; border:1px solid #e2e8f0; border-radius:1.25rem; }
+    .kpi-card   { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; padding:20px; display:flex; flex-direction:column; gap:10px; }
+    .kpi-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.07); transform:translateY(-2px); transition:all .2s; }
+    .period-chip { padding:7px 16px; border-radius:9999px; border:1.5px solid #bec8d2; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; background:#fff; color:#3e4850; }
+    .period-chip.active { background:#006591; color:#fff; border-color:#006591; }
+    .table-row { transition:background .15s; }
+    .table-row:hover { background:#f8f9ff; }
+    .trend-up   { color:#15803d; }
+    .trend-down { color:#991b1b; }
+    .sparkline  { height:28px; overflow:hidden; border-radius:4px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation:fadeUp .4s ease-out both; }
+    .prog-bar { height:6px; background:#e5eeff; border-radius:3px; overflow:hidden; }
+    .prog-fill { height:100%; border-radius:3px; transition:width 1s ease; }
+  </style>
+</head>
+<body>
+<div id="lc-main">
+<div class="p-8 max-w-6xl mx-auto">
+
+  <!-- HEADER -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface mb-1">Mis Reportes Clínicos</h2>
+      <p class="font-body-sm text-on-surface-variant">Análisis de tu evolución de rehabilitación.</p>
+    </div>
+    <div class="flex gap-3 flex-wrap">
+      <div class="flex gap-1 bg-surface-container rounded-xl p-1 border border-outline-variant">
+        <button class="period-chip active" onclick="setPeriod(this,'30')">30 días</button>
+        <button class="period-chip" onclick="setPeriod(this,'90')">3 meses</button>
+        <button class="period-chip" onclick="setPeriod(this,'365')">1 año</button>
+      </div>
+      <button onclick="generatePDF()" class="btn-primary">
+        <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+        Generar PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI ROW -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <div class="kpi-card fade-up">
+      <div class="flex justify-between items-start">
+        <div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">history</span>
+        </div>
+        <span class="font-label-sm text-secondary">+12% vs mes ant.</span>
+      </div>
+      <p class="font-label-sm text-on-surface-variant">Sesiones totales</p>
+      <p class="font-headline-lg text-headline-lg text-on-surface" id="kpi-sessions">—</p>
+    </div>
+    <div class="kpi-card fade-up" style="animation-delay:.08s;">
+      <div class="flex justify-between items-start">
+        <div class="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-secondary-container">star</span>
+        </div>
+        <span class="font-label-sm text-secondary">Top 5%</span>
+      </div>
+      <p class="font-label-sm text-on-surface-variant">Score promedio</p>
+      <p class="font-headline-lg text-headline-lg text-on-surface" id="kpi-avg">—</p>
+    </div>
+    <div class="kpi-card fade-up" style="animation-delay:.16s;">
+      <div class="flex justify-between items-start">
+        <div class="w-10 h-10 rounded-xl bg-tertiary-container/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-tertiary">bolt</span>
+        </div>
+        <span class="font-label-sm text-secondary">Objetivo logrado</span>
+      </div>
+      <p class="font-label-sm text-on-surface-variant">Mejora total</p>
+      <p class="font-headline-lg text-headline-lg text-on-surface" id="kpi-improve">—</p>
+    </div>
+    <div class="kpi-card fade-up" style="animation-delay:.24s;">
+      <div class="flex justify-between items-start">
+        <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">fitness_center</span>
+        </div>
+      </div>
+      <p class="font-label-sm text-on-surface-variant">Más practicado</p>
+      <p class="font-headline-sm text-headline-sm text-on-surface truncate" id="kpi-top">—</p>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="glass-card p-6 mb-8 fade-up" style="animation-delay:.3s;">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="font-headline-sm text-headline-sm text-on-surface">Evolución del Desempeño</h3>
+        <p class="font-body-sm text-on-surface-variant">Puntuación acumulada vs sesiones realizadas</p>
+      </div>
+      <div class="flex items-center gap-5">
+        <div class="flex items-center gap-2"><div style="width:12px;height:12px;border-radius:3px;background:#006591;"></div><span class="font-label-sm text-on-surface-variant">Score</span></div>
+        <div class="flex items-center gap-2"><div style="width:12px;height:12px;border-radius:3px;background:#14b8a6;"></div><span class="font-label-sm text-on-surface-variant">Meta clínica (85%)</span></div>
+      </div>
+    </div>
+
+    <!-- SVG Area chart -->
+    <div style="position:relative;height:260px;">
+      <svg id="perf-chart" viewBox="0 0 1000 240" preserveAspectRatio="none" style="width:100%;height:220px;">
+        <defs>
+          <linearGradient id="grad-score" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#006591" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#006591" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        <line x1="0" y1="48"  x2="1000" y2="48"  stroke="#f0f4f8" stroke-width="1"/>
+        <line x1="0" y1="96"  x2="1000" y2="96"  stroke="#f0f4f8" stroke-width="1"/>
+        <line x1="0" y1="144" x2="1000" y2="144" stroke="#f0f4f8" stroke-width="1"/>
+        <line x1="0" y1="192" x2="1000" y2="192" stroke="#f0f4f8" stroke-width="1"/>
+        <!-- Y labels -->
+        <text x="0" y="44"  font-size="11" fill="#bec8d2">100%</text>
+        <text x="0" y="92"  font-size="11" fill="#bec8d2">75%</text>
+        <text x="0" y="140" font-size="11" fill="#bec8d2">50%</text>
+        <text x="0" y="188" font-size="11" fill="#bec8d2">25%</text>
+        <!-- Target line -->
+        <line x1="0" y1="58" x2="1000" y2="58" stroke="#14b8a6" stroke-dasharray="8,4" stroke-width="1.5"/>
+        <!-- Area fill -->
+        <path d="M40,192 L160,182 L280,170 L400,154 L520,130 L640,118 L760,90 L880,72 L1000,58 V240 H40 Z" fill="url(#grad-score)"/>
+        <!-- Score line -->
+        <path d="M40,192 L160,182 L280,170 L400,154 L520,130 L640,118 L760,90 L880,72 L1000,58" fill="none" stroke="#006591" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Data points -->
+        <circle cx="40"   cy="192" r="5" fill="#006591"/>
+        <circle cx="160"  cy="182" r="5" fill="#006591"/>
+        <circle cx="280"  cy="170" r="5" fill="#006591"/>
+        <circle cx="400"  cy="154" r="5" fill="#006591"/>
+        <circle cx="520"  cy="130" r="5" fill="#006591"/>
+        <circle cx="640"  cy="118" r="5" fill="#006591"/>
+        <circle cx="760"  cy="90"  r="5" fill="#006591"/>
+        <circle cx="880"  cy="72"  r="5" fill="#006591"/>
+        <circle cx="1000" cy="58"  r="5" fill="#006591"/>
+      </svg>
+      <!-- X axis labels -->
+      <div style="display:flex;justify-content:space-between;padding:0 4px;border-top:1px solid #e5eeff;">
+        <span class="font-label-sm text-on-surface-variant">01 Sep</span>
+        <span class="font-label-sm text-on-surface-variant">08 Sep</span>
+        <span class="font-label-sm text-on-surface-variant">15 Sep</span>
+        <span class="font-label-sm text-on-surface-variant">22 Sep</span>
+        <span class="font-label-sm text-on-surface-variant">01 Oct</span>
+        <span class="font-label-sm text-on-surface-variant">08 Oct</span>
+        <span class="font-label-sm text-on-surface-variant">15 Oct</span>
+        <span class="font-label-sm text-on-surface-variant">22 Oct</span>
+        <span class="font-label-sm text-on-surface-variant">Hoy</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Exercise table (2 cols) -->
+    <div class="lg:col-span-2 glass-card overflow-hidden fade-up" style="animation-delay:.36s;">
+      <div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
+        <h3 class="font-headline-sm text-headline-sm text-on-surface">Rendimiento por Ejercicio</h3>
+        <span class="font-label-sm text-on-surface-variant">Período seleccionado</span>
+      </div>
+      <table class="w-full text-left">
+        <thead>
+          <tr class="bg-surface-container-low/50">
+            <th class="px-5 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Ejercicio</th>
+            <th class="px-5 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Sesiones</th>
+            <th class="px-5 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Mejor</th>
+            <th class="px-5 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Promedio</th>
+            <th class="px-5 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Tendencia</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant" id="ex-table">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Improvement areas (1 col) -->
+    <div class="glass-card p-6 fade-up" style="animation-delay:.42s;">
+      <h3 class="font-headline-sm text-headline-sm text-on-surface mb-5">Áreas de Mejora</h3>
+      <div class="space-y-5" id="improvement-areas">
+      </div>
+
+      <!-- PDF banner -->
+      <div class="mt-6 p-4 rounded-2xl bg-primary-container border border-primary-container/20 relative overflow-hidden">
+        <div class="absolute -right-3 -top-3 opacity-10">
+          <span class="material-symbols-outlined" style="font-size:64px;">picture_as_pdf</span>
+        </div>
+        <p class="font-label-md text-primary font-bold mb-1">Reporte para tu fisioterapeuta</p>
+        <p class="font-body-sm text-on-surface-variant text-sm mb-3">Genera un PDF con todos tus datos para compartir en tu próxima consulta.</p>
+        <button onclick="generatePDF()" class="btn-primary w-full justify-center" style="font-size:13px;padding:10px 16px;">
+          <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+          Generar reporte PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="../assets/js/lumbacare-nav.js"></script>
+<script>
+if (!localStorage.getItem('lc_token')) window.location.href = '../login.html';
+LumbaCareNav.init({ role:'paciente', activePage:'reportes' });
+
+const REPORT_DATA = {
+  30:  { sessions:7,  avg:86, improve:'+18%', top:'Gato-Camello' },
+  90:  { sessions:18, avg:83, improve:'+24%', top:'Inclinación Pélvica' },
+  365: { sessions:45, avg:79, improve:'+42%', top:'Puente Lumbar' },
+};
+
+const EXERCISES_TABLE = [
+  { name:'Gato-Camello',       sessions:12, best:95, avg:87, trend:'up' },
+  { name:'Puente Lumbar',      sessions:9,  best:88, avg:81, trend:'up' },
+  { name:'Inclinación Pélvica',sessions:7,  best:94, avg:88, trend:'up' },
+  { name:'Plancha Frontal',    sessions:5,  best:78, avg:70, trend:'down' },
+];
+
+const IMPROVEMENTS = [
+  { icon:'air',  title:'Control de respiración', val:68, color:'#006591' },
+  { icon:'speed',title:'Velocidad de ejecución', val:54, color:'#14b8a6' },
+  { icon:'straighten',title:'Alineación lumbar', val:82, color:'#22c55e' },
+];
+
+function setPeriod(el, period) {
+  document.querySelectorAll('.period-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  updateKPIs(period);
+}
+
+function updateKPIs(period) {
+  const d = REPORT_DATA[period];
+  document.getElementById('kpi-sessions').textContent = d.sessions;
+  document.getElementById('kpi-avg').textContent      = d.avg + '/100';
+  document.getElementById('kpi-improve').textContent  = d.improve;
+  document.getElementById('kpi-top').textContent      = d.top;
+}
+
+function buildTable() {
+  const tbody = document.getElementById('ex-table');
+  tbody.innerHTML = EXERCISES_TABLE.map(e => {
+    const barColor = e.avg >= 85 ? '#22c55e' : e.avg >= 70 ? '#006591' : '#f59e0b';
+    return `
+      <tr class="table-row">
+        <td class="px-5 py-4">
+          <div class="flex items-center gap-3">
+            <div style="width:8px;height:8px;border-radius:50%;background:${barColor};flex-shrink:0;"></div>
+            <span class="font-label-md text-on-surface">${e.name}</span>
+          </div>
+        </td>
+        <td class="px-5 py-4 font-body-sm text-on-surface-variant">${e.sessions}</td>
+        <td class="px-5 py-4"><span style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:9999px;font-size:12px;font-weight:700;">${e.best}%</span></td>
+        <td class="px-5 py-4">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="prog-bar" style="width:80px;">
+              <div class="prog-fill" style="width:${e.avg}%;background:${barColor};"></div>
+            </div>
+            <span class="font-label-sm text-on-surface">${e.avg}%</span>
+          </div>
+        </td>
+        <td class="px-5 py-4">
+          <span class="${e.trend==='up'?'trend-up':'trend-down'}" style="display:flex;align-items:center;gap:3px;font-size:12px;font-weight:700;">
+            <span class="material-symbols-outlined" style="font-size:14px;">${e.trend==='up'?'trending_up':'trending_down'}</span>
+            ${e.trend==='up'?'Mejora':'Revisar'}
+          </span>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function buildImprovements() {
+  const div = document.getElementById('improvement-areas');
+  div.innerHTML = IMPROVEMENTS.map(imp => `
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="material-symbols-outlined" style="font-size:18px;color:${imp.color};">${imp.icon}</span>
+          <span class="font-label-md text-on-surface">${imp.title}</span>
+        </div>
+        <span class="font-label-sm" style="color:${imp.color};font-weight:700;">${imp.val}%</span>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-fill" style="width:${imp.val}%;background:${imp.color};"></div>
+      </div>
+    </div>`).join('');
+}
+
+function generatePDF() {
+  alert('El reporte PDF se está generando y será enviado a tu correo y al de tu fisioterapeuta.\n\n(Esta función se activa al conectar el backend FastAPI con la ruta POST /api/reports/pdf)');
+}
+
+// Init
+updateKPIs('30');
+buildTable();
+buildImprovements();
+setTimeout(() => {
+  document.querySelectorAll('.prog-fill').forEach(b => { const w=b.style.width; b.style.width='0'; setTimeout(()=>b.style.width=w,100); });
+}, 400);
+</script>
+</body>
+</html>

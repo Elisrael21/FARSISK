@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FARSISK — Mi Perfil</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="../assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="../assets/css/lumbacare.css"/>
+  <style>
+    body { background:#f8f9ff; }
+    .section-card { background:#fff; border:1px solid #e2e8f0; border-radius:1.25rem; padding:24px; }
+    .info-row { display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid #f0f4f8; }
+    .info-row:last-of-type { border-bottom:none; }
+    /* Toggle switch */
+    .toggle-wrap { position:relative; display:inline-flex; align-items:center; cursor:pointer; }
+    .toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track { width:44px; height:24px; background:#bec8d2; border-radius:9999px; transition:background .2s; position:relative; }
+    .toggle-track::after { content:''; position:absolute; left:3px; top:3px; width:18px; height:18px; background:#fff; border-radius:50%; transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+    .toggle-wrap input:checked + .toggle-track { background:#006591; }
+    .toggle-wrap input:checked + .toggle-track::after { transform:translateX(20px); }
+    /* Emergency contact card */
+    .emergency-card { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; padding:14px 16px; display:flex; justify-content:space-between; align-items:flex-start; }
+    /* Tabs */
+    .tab-btn { padding:10px 20px; border-radius:.75rem; font-size:14px; font-weight:600; cursor:pointer; transition:all .15s; border:none; background:none; color:#6e7881; }
+    .tab-btn.active { background:#e5eeff; color:#006591; }
+    .tab-btn:hover:not(.active) { background:#f8f9ff; color:#0b1c30; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    /* Avatar ring */
+    .avatar-ring { width:96px; height:96px; border-radius:50%; border:4px solid #e5eeff; box-shadow:0 0 0 2px #fff; position:relative; overflow:visible; flex-shrink:0; }
+    .avatar-ring img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+    .avatar-edit { position:absolute; bottom:0; right:0; width:28px; height:28px; background:#006591; border-radius:50%; border:2px solid #fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    /* Save toast */
+    #save-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#0b1c30; color:#fff; padding:10px 20px; border-radius:12px; font-size:14px; font-weight:600; transition:transform .3s ease; z-index:200; display:flex; align-items:center; gap:8px; }
+    #save-toast.show { transform:translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div id="lc-main">
+<div class="p-8 max-w-6xl mx-auto">
+
+  <!-- HEADER -->
+  <header class="mb-8">
+    <h2 class="font-headline-lg text-headline-lg text-on-surface mb-1">Mi Perfil</h2>
+    <p class="font-body-sm text-on-surface-variant">Gestiona tu información personal, notificaciones y contactos de emergencia.</p>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- ══ LEFT COLUMN (4 cols) ═══════════════════ -->
+    <div class="lg:col-span-4 space-y-5">
+
+      <!-- Personal info card -->
+      <div class="section-card text-center">
+        <!-- Avatar -->
+        <div class="flex flex-col items-center mb-6">
+          <div class="avatar-ring">
+            <div id="avatar-placeholder" style="width:100%;height:100%;border-radius:50%;background:#006591;display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;font-weight:800;" id="avatar-initials">JG</div>
+            <div class="avatar-edit" onclick="changeAvatar()">
+              <span class="material-symbols-outlined" style="font-size:14px;color:#fff;">edit</span>
+            </div>
+          </div>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface mt-4" id="display-name">Juan García</h3>
+          <p class="font-body-sm text-on-surface-variant" id="display-email">juan@correo.com</p>
+          <span class="mt-2 px-3 py-1 rounded-full bg-primary-container text-primary font-label-sm">Paciente</span>
+        </div>
+
+        <!-- Info rows -->
+        <div>
+          <div class="info-row">
+            <span class="font-label-md text-on-surface-variant">Edad</span>
+            <span class="font-body-md text-on-surface font-semibold" id="display-age">—</span>
+          </div>
+          <div class="info-row">
+            <span class="font-label-md text-on-surface-variant">Peso</span>
+            <span class="font-body-md text-on-surface font-semibold" id="display-weight">—</span>
+          </div>
+          <div class="info-row">
+            <span class="font-label-md text-on-surface-variant">Altura</span>
+            <span class="font-body-md text-on-surface font-semibold" id="display-height">—</span>
+          </div>
+          <div class="info-row">
+            <span class="font-label-md text-on-surface-variant">ID Paciente</span>
+            <span class="font-label-sm text-on-surface-variant">#9283</span>
+          </div>
+        </div>
+
+        <button onclick="switchTab('personal')" class="btn-secondary w-full mt-5">
+          <span class="material-symbols-outlined text-base">edit_note</span>
+          Editar Perfil
+        </button>
+      </div>
+
+      <!-- Physio card -->
+      <div class="section-card">
+        <p class="font-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Fisioterapeuta Asignado</p>
+        <div class="flex items-center gap-4 mb-5">
+          <div style="width:56px;height:56px;border-radius:.75rem;background:#e5eeff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span class="material-symbols-outlined text-primary" style="font-size:28px;font-variation-settings:'FILL' 1;">person_pin</span>
+          </div>
+          <div>
+            <p class="font-headline-sm text-headline-sm text-on-surface">Dr. Ricardo Sosa</p>
+            <p class="font-body-sm text-on-surface-variant">Especialista en Columna</p>
+          </div>
+        </div>
+        <a href="mailto:rsosa@lumbacare.com" class="btn-secondary w-full justify-center" style="text-decoration:none;">
+          <span class="material-symbols-outlined text-base">chat_bubble</span>
+          Contactar
+        </a>
+      </div>
+
+      <!-- Stats mini -->
+      <div class="section-card">
+        <p class="font-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Mi progreso</p>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="font-body-sm text-on-surface-variant">Sesiones completadas</span>
+            <span class="font-label-md text-on-surface font-bold">12</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-body-sm text-on-surface-variant">Score promedio</span>
+            <span class="font-label-md text-secondary font-bold">86%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-body-sm text-on-surface-variant">Racha actual</span>
+            <span class="font-label-md text-tertiary font-bold">5 días 🔥</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-body-sm text-on-surface-variant">Miembro desde</span>
+            <span class="font-label-sm text-on-surface-variant">Sep 2024</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ RIGHT COLUMN (8 cols) ══════════════════ -->
+    <div class="lg:col-span-8 space-y-5">
+
+      <!-- Section tabs -->
+      <div class="flex gap-1 bg-surface-container rounded-xl p-1 border border-outline-variant w-fit">
+        <button class="tab-btn active" onclick="switchTab('notifications')" data-tab="notifications">Notificaciones</button>
+        <button class="tab-btn" onclick="switchTab('emergency')"     data-tab="emergency">Emergencias</button>
+        <button class="tab-btn" onclick="switchTab('personal')"      data-tab="personal">Datos personales</button>
+        <button class="tab-btn" onclick="switchTab('security')"      data-tab="security">Seguridad</button>
+      </div>
+
+      <!-- ─── NOTIFICATIONS ─────────────────────── -->
+      <div class="tab-panel active section-card" id="tab-notifications">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="material-symbols-outlined text-primary">notifications_active</span>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface">Notificaciones</h3>
+        </div>
+        <div class="space-y-5">
+          <div class="flex justify-between items-center">
+            <div><p class="font-body-md text-on-surface font-semibold">Recordatorios de sesión</p><p class="font-body-sm text-on-surface-variant">Alertas antes de tus ejercicios diarios</p></div>
+            <label class="toggle-wrap"><input type="checkbox" checked onchange="saveToggle(this,'reminders')"/><div class="toggle-track"></div></label>
+          </div>
+          <div style="height:1px;background:#f0f4f8;"></div>
+          <div class="flex justify-between items-center">
+            <div><p class="font-body-md text-on-surface font-semibold">Reportes de progreso semanales</p><p class="font-body-sm text-on-surface-variant">Resúmenes cada domingo por la mañana</p></div>
+            <label class="toggle-wrap"><input type="checkbox" checked onchange="saveToggle(this,'weekly')"/><div class="toggle-track"></div></label>
+          </div>
+          <div style="height:1px;background:#f0f4f8;"></div>
+          <div class="flex justify-between items-center">
+            <div><p class="font-body-md text-on-surface font-semibold">Mensajes del fisioterapeuta</p><p class="font-body-sm text-on-surface-variant">Notificaciones directas de tu especialista</p></div>
+            <label class="toggle-wrap"><input type="checkbox" checked onchange="saveToggle(this,'physio')"/><div class="toggle-track"></div></label>
+          </div>
+          <div style="height:1px;background:#f0f4f8;"></div>
+          <div class="flex justify-between items-center">
+            <div><p class="font-body-md text-on-surface font-semibold">Alertas de inactividad</p><p class="font-body-sm text-on-surface-variant">Aviso si llevas 3+ días sin ejercitar</p></div>
+            <label class="toggle-wrap"><input type="checkbox" onchange="saveToggle(this,'inactivity')"/><div class="toggle-track"></div></label>
+          </div>
+          <div style="height:1px;background:#f0f4f8;"></div>
+          <div class="flex justify-between items-center">
+            <div><p class="font-body-md text-on-surface font-semibold">Compartir datos con fisioterapeuta</p><p class="font-body-sm text-on-surface-variant">El Dr. Sosa puede ver tus sesiones en tiempo real</p></div>
+            <label class="toggle-wrap"><input type="checkbox" checked onchange="saveToggle(this,'share')"/><div class="toggle-track"></div></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── EMERGENCY CONTACTS ────────────────── -->
+      <div class="tab-panel" id="tab-emergency" style="border:2px solid #fecaca;border-radius:1.25rem;padding:24px;background:#fff;">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-error" style="font-size:24px;">emergency</span>
+            <h3 class="font-headline-sm text-headline-sm text-error">Contactos de Emergencia</h3>
+          </div>
+          <button onclick="addContact()" class="btn-danger" style="font-size:13px;padding:8px 14px;">
+            <span class="material-symbols-outlined text-sm">add</span>
+            Añadir
+          </button>
+        </div>
+        <p class="font-body-sm text-on-surface-variant mb-5">
+          Si el sistema detecta una postura de riesgo durante tus ejercicios, se notificará automáticamente a estas personas vía SMS y WhatsApp.
+        </p>
+
+        <div class="space-y-3" id="contacts-list">
+          <!-- Populated by JS -->
+        </div>
+
+        <div id="no-contacts" style="display:none;" class="text-center py-6 bg-surface-container-low rounded-xl">
+          <span class="material-symbols-outlined" style="font-size:36px;color:#bec8d2;">person_off</span>
+          <p class="font-body-sm text-on-surface-variant mt-2">No hay contactos configurados.</p>
+          <p class="font-body-sm text-on-surface-variant">Añade al menos uno para mayor seguridad.</p>
+        </div>
+
+        <!-- Add contact form (hidden) -->
+        <div id="add-contact-form" style="display:none;margin-top:16px;background:#f8f9ff;border-radius:.75rem;padding:16px;border:1px solid #e2e8f0;">
+          <p class="font-label-md text-on-surface font-bold mb-3">Nuevo contacto de emergencia</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="font-label-sm text-on-surface-variant block mb-1">Nombre</label><input type="text" id="new-name" class="input-field h-10 text-sm" placeholder="Nombre completo"/></div>
+            <div><label class="font-label-sm text-on-surface-variant block mb-1">Teléfono</label><input type="tel" id="new-phone" class="input-field h-10 text-sm" placeholder="+52 55 1234 5678"/></div>
+            <div><label class="font-label-sm text-on-surface-variant block mb-1">Relación</label>
+              <select id="new-rel" class="input-field h-10 text-sm">
+                <option>Familiar</option><option>Pareja</option><option>Amigo/a</option><option>Madre</option><option>Padre</option><option>Hermano/a</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2">
+              <button onclick="saveContact()" class="btn-primary flex-1" style="height:40px;font-size:13px;">Guardar</button>
+              <button onclick="document.getElementById('add-contact-form').style.display='none'" class="btn-secondary" style="height:40px;padding:0 14px;font-size:13px;">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 p-4 rounded-xl bg-amber-50 border border-amber-200">
+          <p class="font-body-sm text-amber-800"><strong>Nivel 3 de emergencia:</strong> Si el sistema detecta ausencia de movimiento o postura de caída y no respondes en 10 segundos, tus contactos recibirán un SMS automáticamente.</p>
+        </div>
+      </div>
+
+      <!-- ─── PERSONAL DATA ────────────────────── -->
+      <div class="tab-panel section-card" id="tab-personal">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="material-symbols-outlined text-primary">person_edit</span>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface">Datos Personales</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Nombre completo</label>
+            <input id="edit-name" type="text" class="input-field" placeholder="Tu nombre"/></div>
+          <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Correo electrónico</label>
+            <input id="edit-email" type="email" class="input-field" placeholder="tu@correo.com"/></div>
+          <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Edad</label>
+            <input id="edit-age" type="number" class="input-field" placeholder="Años" min="10" max="100"/></div>
+          <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Peso (kg)</label>
+            <input id="edit-weight" type="number" class="input-field" placeholder="kg"/></div>
+          <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Altura (m)</label>
+            <input id="edit-height" type="number" class="input-field" placeholder="1.70" step="0.01"/></div>
+          <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Diagnóstico</label>
+            <input id="edit-diagnosis" type="text" class="input-field" placeholder="Ej. Lumbago crónico" readonly style="background:#f1f5f9;color:#6e7881;"/></div>
+        </div>
+        <div class="mt-5 flex gap-3 justify-end">
+          <button onclick="loadProfile()" class="btn-secondary">Cancelar</button>
+          <button onclick="saveProfile()" class="btn-primary">
+            <span class="material-symbols-outlined text-base">save</span>
+            Guardar cambios
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── SECURITY ─────────────────────────── -->
+      <div class="tab-panel section-card" id="tab-security">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="material-symbols-outlined text-primary">lock</span>
+          <h3 class="font-headline-sm text-headline-sm text-on-surface">Seguridad</h3>
+        </div>
+
+        <!-- Change password -->
+        <div class="mb-6">
+          <p class="font-label-md text-on-surface font-bold mb-4">Cambiar contraseña</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Actual</label>
+              <input type="password" id="pw-current" class="input-field" placeholder="••••••••"/></div>
+            <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Nueva</label>
+              <input type="password" id="pw-new" class="input-field" placeholder="Mínimo 8 caracteres"/></div>
+            <div><label class="font-label-sm text-on-surface-variant block mb-1.5">Confirmar</label>
+              <input type="password" id="pw-confirm" class="input-field" placeholder="Repetir nueva"/></div>
+          </div>
+          <button onclick="changePassword()" class="btn-primary mt-4" style="font-size:13px;padding:10px 20px;">
+            <span class="material-symbols-outlined text-base">key</span>
+            Actualizar contraseña
+          </button>
+        </div>
+
+        <div style="height:1px;background:#f0f4f8;margin-bottom:24px;"></div>
+
+        <!-- Sessions -->
+        <div class="mb-6">
+          <p class="font-label-md text-on-surface font-bold mb-3">Sesiones activas</p>
+          <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary">computer</span>
+              <div><p class="font-label-md text-on-surface">Navegador actual</p><p class="font-label-sm text-on-surface-variant">Activo ahora · Teziutlán, México</p></div>
+            </div>
+            <span class="font-label-sm text-secondary">Esta sesión</span>
+          </div>
+        </div>
+
+        <div style="height:1px;background:#f0f4f8;margin-bottom:24px;"></div>
+
+        <!-- Danger zone -->
+        <div>
+          <p class="font-label-sm text-error uppercase tracking-wider font-bold mb-3">Zona de riesgo</p>
+          <button onclick="confirmDelete()" style="background:none;border:1.5px solid #fecaca;border-radius:.75rem;padding:10px 16px;color:#991b1b;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='none'">
+            <span class="material-symbols-outlined text-sm" style="vertical-align:middle;margin-right:4px;">delete_forever</span>
+            Eliminar mi cuenta
+          </button>
+          <p class="font-body-sm text-on-surface-variant mt-2">Esta acción es irreversible. Se eliminarán todos tus datos clínicos.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Save toast -->
+<div id="save-toast">
+  <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1;">check_circle</span>
+  <span id="toast-msg">Cambios guardados</span>
+</div>
+
+<script src="../assets/js/lumbacare-nav.js"></script>
+<script>
+if (!localStorage.getItem('lc_token')) window.location.href = '../login.html';
+LumbaCareNav.init({ role:'paciente', activePage:'perfil' });
+
+// ── Profile data ─────────────────────────────────────────────
+let profile = JSON.parse(localStorage.getItem('lc_profile') || 'null') || {
+  name:      localStorage.getItem('lc_name')  || 'Juan García',
+  email:     localStorage.getItem('lc_email') || 'juan@correo.com',
+  age:       32, weight:75, height:1.75, diagnosis:'Lumbago crónico',
+};
+let contacts = JSON.parse(localStorage.getItem('lc_emergency_contacts') || '[]');
+if (!contacts.length) contacts = [{ id:1, name:'Elena García', phone:'+52 55 1234 5678', rel:'Hermana' }];
+
+// ── Load profile into UI ─────────────────────────────────────
+function loadProfile() {
+  document.getElementById('display-name').textContent    = profile.name;
+  document.getElementById('display-email').textContent   = profile.email;
+  document.getElementById('display-age').textContent     = profile.age + ' años';
+  document.getElementById('display-weight').textContent  = profile.weight + ' kg';
+  document.getElementById('display-height').textContent  = profile.height + ' m';
+  // Initials
+  const initials = profile.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('avatar-placeholder').textContent = initials;
+  // Form
+  document.getElementById('edit-name').value       = profile.name;
+  document.getElementById('edit-email').value      = profile.email;
+  document.getElementById('edit-age').value        = profile.age;
+  document.getElementById('edit-weight').value     = profile.weight;
+  document.getElementById('edit-height').value     = profile.height;
+  document.getElementById('edit-diagnosis').value  = profile.diagnosis;
+}
+
+function saveProfile() {
+  profile.name   = document.getElementById('edit-name').value.trim()   || profile.name;
+  profile.email  = document.getElementById('edit-email').value.trim()  || profile.email;
+  profile.age    = parseInt(document.getElementById('edit-age').value)  || profile.age;
+  profile.weight = parseFloat(document.getElementById('edit-weight').value) || profile.weight;
+  profile.height = parseFloat(document.getElementById('edit-height').value) || profile.height;
+  localStorage.setItem('lc_profile', JSON.stringify(profile));
+  localStorage.setItem('lc_name', profile.name);
+  loadProfile();
+  showToast('Perfil actualizado correctamente');
+}
+
+// ── Emergency contacts ────────────────────────────────────────
+function renderContacts() {
+  const list = document.getElementById('contacts-list');
+  const none = document.getElementById('no-contacts');
+  if (!contacts.length) { none.style.display='block'; list.innerHTML=''; return; }
+  none.style.display='none';
+  list.innerHTML = contacts.map(c => `
+    <div class="emergency-card">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span class="material-symbols-outlined" style="font-size:20px;color:#b71c1c;">person</span>
+        </div>
+        <div>
+          <p class="font-label-md text-on-surface">${c.name}</p>
+          <p class="font-label-sm text-on-surface-variant">${c.phone}</p>
+          <span style="background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 8px;font-size:10px;font-weight:700;text-transform:uppercase;">${c.rel}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="editContact(${c.id})" style="padding:6px;border:1px solid #e2e8f0;border-radius:.5rem;background:none;cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='#f8f9ff'" onmouseleave="this.style.background='none'">
+          <span class="material-symbols-outlined" style="font-size:18px;color:#6e7881;">edit</span>
+        </button>
+        <button onclick="deleteContact(${c.id})" style="padding:6px;border:1px solid #fecaca;border-radius:.5rem;background:none;cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='none'">
+          <span class="material-symbols-outlined" style="font-size:18px;color:#b71c1c;">delete</span>
+        </button>
+      </div>
+    </div>`).join('');
+
+  // Mark emergency as configured
+  localStorage.setItem('lc_emergency_set', '1');
+}
+
+function addContact() {
+  if (contacts.length >= 2) { alert('Máximo 2 contactos de emergencia permitidos.'); return; }
+  document.getElementById('add-contact-form').style.display='block';
+}
+
+function saveContact() {
+  const name  = document.getElementById('new-name').value.trim();
+  const phone = document.getElementById('new-phone').value.trim();
+  const rel   = document.getElementById('new-rel').value;
+  if (!name || !phone) { alert('Nombre y teléfono son requeridos.'); return; }
+  contacts.push({ id:Date.now(), name, phone, rel });
+  localStorage.setItem('lc_emergency_contacts', JSON.stringify(contacts));
+  document.getElementById('add-contact-form').style.display='none';
+  document.getElementById('new-name').value='';
+  document.getElementById('new-phone').value='';
+  renderContacts();
+  showToast('Contacto de emergencia guardado');
+}
+
+function deleteContact(id) {
+  if (!confirm('¿Eliminar este contacto de emergencia?')) return;
+  contacts = contacts.filter(c=>c.id!==id);
+  localStorage.setItem('lc_emergency_contacts', JSON.stringify(contacts));
+  renderContacts();
+  showToast('Contacto eliminado');
+}
+
+function editContact(id) {
+  const c = contacts.find(x=>x.id===id);
+  if (!c) return;
+  document.getElementById('new-name').value  = c.name;
+  document.getElementById('new-phone').value = c.phone;
+  document.getElementById('new-rel').value   = c.rel;
+  deleteContact(id);
+  document.getElementById('add-contact-form').style.display='block';
+}
+
+// ── Password ─────────────────────────────────────────────────
+function changePassword() {
+  const cur  = document.getElementById('pw-current').value;
+  const nw   = document.getElementById('pw-new').value;
+  const conf = document.getElementById('pw-confirm').value;
+  if (!cur || !nw || !conf) { alert('Completa todos los campos.'); return; }
+  if (nw.length < 8) { alert('La nueva contraseña debe tener al menos 8 caracteres.'); return; }
+  if (nw !== conf) { alert('Las contraseñas no coinciden.'); return; }
+  // Real: POST /api/auth/change-password
+  document.getElementById('pw-current').value='';
+  document.getElementById('pw-new').value='';
+  document.getElementById('pw-confirm').value='';
+  showToast('Contraseña actualizada correctamente');
+}
+
+// ── Tabs ─────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id===`tab-${name}`));
+}
+
+function saveToggle(el, key) {
+  localStorage.setItem('lc_notif_'+key, el.checked?'1':'0');
+  showToast(el.checked ? 'Notificación activada' : 'Notificación desactivada');
+}
+
+function confirmDelete() {
+  if (confirm('¿Estás seguro? Esta acción eliminará tu cuenta y todos tus datos. No se puede deshacer.')) {
+    localStorage.clear();
+    window.location.href = '../index.html';
+  }
+}
+
+function changeAvatar() {
+  showToast('Cambio de foto disponible al conectar el backend');
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('save-toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+loadProfile();
+renderContacts();
+
+// Check URL hash for direct tab navigation (e.g. perfil.html#emergencias)
+if (window.location.hash === '#emergencias') switchTab('emergency');
+
+// Restore notification toggles
+['reminders','weekly','physio','inactivity','share'].forEach(k => {
+  const saved = localStorage.getItem('lc_notif_'+k);
+  if (saved !== null) {
+    const toggle = document.querySelector(`input[onchange*="${k}"]`);
+    if (toggle) toggle.checked = saved === '1';
+  }
+});
+</script>
+</body>
+</html>

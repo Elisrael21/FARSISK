@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="LumbaCare — Iniciar sesión o crear cuenta"/>
+  <title>FARSISK — Acceso</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+  <script src="assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="assets/css/lumbacare.css"/>
+
+  <style>
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+    .auth-bg {
+      position: fixed; inset: 0; z-index: -1;
+      background: linear-gradient(135deg, #eff4ff 0%, #f0fdf9 60%, #f8f9ff 100%);
+    }
+    .blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); opacity: .18; pointer-events: none;
+    }
+
+    /* Card */
+    .auth-card {
+      background: rgba(255,255,255,.97);
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 20px rgba(0,0,0,.06), 0 20px 60px rgba(0,0,0,.06);
+      border-radius: 1.5rem;
+      overflow: hidden;
+    }
+
+    /* Tabs */
+    .tab-btn {
+      flex: 1; padding: 16px;
+      font-weight: 600; font-size: 14px; letter-spacing: .01em;
+      border-bottom: 2px solid transparent;
+      color: #6e7881;
+      transition: all .2s ease;
+      background: none; border-top: none; border-left: none; border-right: none;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: #006591;
+      border-bottom-color: #006591;
+    }
+    .tab-btn:hover:not(.active) { color: #0b1c30; background: #f8f9ff; }
+
+    /* Inputs */
+    .input-clinical {
+      width: 100%; height: 48px;
+      background: #f1f5f9; border: 2px solid transparent;
+      border-radius: .5rem; padding: 0 16px;
+      font-size: 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #0b1c30; transition: all .2s ease; outline: none;
+    }
+    .input-clinical:focus {
+      background: #ffffff; border-color: #006591;
+      box-shadow: 0 0 0 4px rgba(0,101,145,.1);
+    }
+    .input-clinical.error-state { border-color: #ba1a1a; background: #fff5f5; }
+    .input-clinical.success-state { border-color: #006b5f; }
+
+    /* Password toggle */
+    .input-wrap { position: relative; }
+    .input-wrap .toggle-pw {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: #6e7881; transition: color .15s;
+    }
+    .input-wrap .toggle-pw:hover { color: #006591; }
+
+    /* Role cards */
+    .role-card {
+      cursor: pointer; padding: 16px 12px;
+      border: 2px solid #bec8d2; border-radius: 1rem;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; text-align: center;
+      transition: all .25s cubic-bezier(.4,0,.2,1);
+    }
+    .role-card:hover { border-color: #0ea5e9; background: #f0f9ff; }
+    .role-card.selected {
+      border-color: #0ea5e9; background: #f0f9ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(14,165,233,.14);
+    }
+    .role-card.selected .role-icon { color: #006591; }
+    .role-card.selected .role-label { color: #0b1c30; }
+    .role-icon { font-size: 28px; color: #6e7881; transition: color .2s; }
+    .role-label { font-size: 12px; font-weight: 600; color: #6e7881; transition: color .2s; }
+
+    /* Password strength */
+    .strength-bar {
+      height: 3px; border-radius: 2px;
+      transition: width .3s ease, background .3s ease;
+    }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%; height: 48px;
+      background: #006591; color: #ffffff;
+      border: none; border-radius: .75rem;
+      font-weight: 600; font-size: 14px; letter-spacing: .01em;
+      cursor: pointer; transition: all .2s ease;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-submit:hover { background: #004c6e; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,101,145,.25); }
+    .btn-submit:active { transform: scale(.97); }
+    .btn-submit:disabled { background: #6e7881; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Loading spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .6s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error / success messages */
+    .msg-error {
+      background: #ffdad6; border: 1px solid #ffb4ab; border-radius: .5rem;
+      padding: 10px 14px; color: #93000a; font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .msg-success {
+      background: #dcfce7; border: 1px solid #bbf7d0; border-radius: .5rem;
+      padding: 10px 14px; color: #15803d; font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* Field error label */
+    .field-error { color: #ba1a1a; font-size: 12px; margin-top: 4px; display: none; padding-left: 4px; }
+    .field-error.visible { display: block; }
+
+    /* Fade animation */
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .form-panel { animation: fadeSlide .25s ease-out; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <!-- Background -->
+  <div class="auth-bg">
+    <div class="blob w-64 h-64 bg-blue-300"  style="top:8%;  left:4%;"></div>
+    <div class="blob w-80 h-80 bg-teal-300"  style="bottom:10%; right:8%;"></div>
+    <div class="blob w-48 h-48 bg-sky-200"   style="top:50%; left:50%;"></div>
+  </div>
+
+  <!-- Back to landing -->
+  <a href="index.html" class="fixed top-6 left-6 flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-label-sm z-50">
+    <span class="material-symbols-outlined text-base">arrow_back</span>
+    Inicio
+  </a>
+
+  <!-- ── AUTH CARD ───────────────────────────── -->
+  <main class="w-full max-w-[480px]">
+
+    <!-- Logo -->
+    <div class="flex flex-col items-center mb-8 gap-2">
+      <a href="index.html" class="flex flex-col items-center gap-2 no-underline">
+        <div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center level-2" style="transform:rotate(3deg)">
+          <span class="material-symbols-outlined text-white text-4xl" style="font-variation-settings:'FILL' 1;">health_and_safety</span>
+        </div>
+        <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">FARSISK</h1>
+      </a>
+      <p class="font-body-sm text-on-surface-variant">Rehabilitación Lumbar Inteligente</p>
+    </div>
+
+    <!-- Card -->
+    <div class="auth-card">
+
+      <!-- Tabs -->
+      <div class="flex border-b border-outline-variant">
+        <button class="tab-btn active" id="tab-login"    onclick="switchTab('login')">Iniciar Sesión</button>
+        <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Registrarse</button>
+      </div>
+
+      <!-- Forms wrapper -->
+      <div class="p-6 md:p-8">
+
+        <!-- ── LOGIN FORM ──────────────────── -->
+        <form id="form-login" class="form-panel space-y-5" novalidate>
+
+          <!-- Global error -->
+          <div id="login-error" class="msg-error hidden">
+            <span class="material-symbols-outlined text-base">error</span>
+            <span id="login-error-text">Correo o contraseña incorrectos.</span>
+          </div>
+
+          <!-- Email -->
+          <div class="space-y-1">
+            <label class="font-label-sm text-on-surface-variant block px-1" for="login-email">Correo Electrónico</label>
+            <input id="login-email" type="email" class="input-clinical"
+              placeholder="ejemplo@correo.com" autocomplete="email"/>
+            <p class="field-error" id="login-email-err">Ingresa un correo válido.</p>
+          </div>
+
+          <!-- Password -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center px-1">
+              <label class="font-label-sm text-on-surface-variant" for="login-pw">Contraseña</label>
+              <a href="forgot-password.html" class="font-label-sm text-primary hover:underline">¿Olvidaste tu contraseña?</a>
+            </div>
+            <div class="input-wrap">
+              <input id="login-pw" type="password" class="input-clinical pr-12"
+                placeholder="••••••••" autocomplete="current-password"/>
+              <button type="button" class="toggle-pw" onclick="togglePw('login-pw', this)" aria-label="Mostrar contraseña">
+                <span class="material-symbols-outlined text-xl">visibility</span>
+              </button>
+            </div>
+            <p class="field-error" id="login-pw-err">Ingresa tu contraseña.</p>
+          </div>
+
+          <!-- Remember me -->
+          <div class="flex items-center gap-2 px-1">
+            <input id="remember" type="checkbox"
+              class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary accent-primary"/>
+            <label for="remember" class="font-body-sm text-on-surface-variant cursor-pointer select-none">Recordarme</label>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-submit" id="login-btn">
+            <span class="spinner" id="login-spinner"></span>
+            <span id="login-btn-text">Entrar</span>
+            <span class="material-symbols-outlined text-base" id="login-btn-icon">login</span>
+          </button>
+
+          <p class="text-center font-body-sm text-on-surface-variant pt-2">
+            ¿No tienes cuenta?
+            <button type="button" onclick="switchTab('register')"
+              class="text-primary font-semibold hover:underline bg-none border-none cursor-pointer">
+              Regístrate gratis
+            </button>
+          </p>
+        </form>
+
+        <!-- ── REGISTER FORM ───────────────── -->
+        <form id="form-register" class="form-panel space-y-5 hidden" novalidate>
+
+          <!-- Global error -->
+          <div id="register-error" class="msg-error hidden">
+            <span class="material-symbols-outlined text-base">error</span>
+            <span id="register-error-text">Ocurrió un error. Intenta de nuevo.</span>
+          </div>
+
+          <!-- Role selector -->
+          <div class="space-y-2">
+            <label class="font-label-sm text-on-surface-variant block px-1">¿Cómo usarás LumbaCare?</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="role-card selected" id="role-paciente" onclick="selectRole('paciente')">
+                <span class="material-symbols-outlined role-icon" style="color:#006591;">person</span>
+                <span class="role-label" style="color:#0b1c30;">Soy Paciente</span>
+                <span style="font-size:11px; color:#6e7881;">Realizo ejercicios</span>
+              </div>
+              <div class="role-card" id="role-fisio" onclick="selectRole('fisio')">
+                <span class="material-symbols-outlined role-icon">medical_information</span>
+                <span class="role-label">Soy Fisioterapeuta</span>
+                <span style="font-size:11px; color:#6e7881;">Gestiono pacientes</span>
+              </div>
+            </div>
+            <input type="hidden" id="selected-role" value="paciente"/>
+          </div>
+
+          <!-- Full name -->
+          <div class="space-y-1">
+            <label class="font-label-sm text-on-surface-variant block px-1" for="reg-name">Nombre Completo</label>
+            <input id="reg-name" type="text" class="input-clinical"
+              placeholder="Juan García" autocomplete="name"/>
+            <p class="field-error" id="reg-name-err">Ingresa tu nombre completo.</p>
+          </div>
+
+          <!-- Email -->
+          <div class="space-y-1">
+            <label class="font-label-sm text-on-surface-variant block px-1" for="reg-email">Correo Electrónico</label>
+            <input id="reg-email" type="email" class="input-clinical"
+              placeholder="ejemplo@correo.com" autocomplete="email"/>
+            <p class="field-error" id="reg-email-err">Ingresa un correo válido.</p>
+          </div>
+
+          <!-- Password fields -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="font-label-sm text-on-surface-variant block px-1" for="reg-pw">Contraseña</label>
+              <div class="input-wrap">
+                <input id="reg-pw" type="password" class="input-clinical pr-10"
+                  placeholder="••••••••" autocomplete="new-password"
+                  oninput="checkStrength(this.value)"/>
+                <button type="button" class="toggle-pw" onclick="togglePw('reg-pw', this)" aria-label="Mostrar">
+                  <span class="material-symbols-outlined" style="font-size:18px;">visibility</span>
+                </button>
+              </div>
+              <!-- Strength bar -->
+              <div class="flex gap-1 mt-1.5 px-1">
+                <div class="flex-1 h-1 rounded-full bg-outline-variant overflow-hidden">
+                  <div class="strength-bar" id="sb1" style="width:0%"></div>
+                </div>
+                <div class="flex-1 h-1 rounded-full bg-outline-variant overflow-hidden">
+                  <div class="strength-bar" id="sb2" style="width:0%"></div>
+                </div>
+                <div class="flex-1 h-1 rounded-full bg-outline-variant overflow-hidden">
+                  <div class="strength-bar" id="sb3" style="width:0%"></div>
+                </div>
+              </div>
+              <p class="field-error" id="reg-pw-err">Mínimo 8 caracteres.</p>
+            </div>
+
+            <div class="space-y-1">
+              <label class="font-label-sm text-on-surface-variant block px-1" for="reg-pw2">Confirmar</label>
+              <div class="input-wrap">
+                <input id="reg-pw2" type="password" class="input-clinical pr-10"
+                  placeholder="••••••••" autocomplete="new-password"/>
+                <button type="button" class="toggle-pw" onclick="togglePw('reg-pw2', this)" aria-label="Mostrar">
+                  <span class="material-symbols-outlined" style="font-size:18px;">visibility</span>
+                </button>
+              </div>
+              <p class="field-error" id="reg-pw2-err">Las contraseñas no coinciden.</p>
+            </div>
+          </div>
+
+          <!-- Physio-only: license field (hidden by default) -->
+          <div id="physio-field" class="space-y-1 hidden">
+            <label class="font-label-sm text-on-surface-variant block px-1" for="reg-license">
+              Número de Cédula Profesional
+            </label>
+            <input id="reg-license" type="text" class="input-clinical" placeholder="Ej. 12345678"/>
+            <p class="font-body-sm text-on-surface-variant px-1" style="font-size:12px;">
+              Tu cuenta será verificada antes de ser activada.
+            </p>
+          </div>
+
+          <!-- Terms -->
+          <div class="flex items-start gap-2 px-1">
+            <input id="terms" type="checkbox"
+              class="w-4 h-4 mt-0.5 rounded border-outline-variant accent-primary"/>
+            <label for="terms" class="font-body-sm text-on-surface-variant cursor-pointer select-none">
+              Acepto los
+              <a href="pages/terminos.html" target="_blank" class="text-primary hover:underline">Términos de Servicio</a>
+              y la
+              <a href="pages/privacidad.html" target="_blank" class="text-primary hover:underline">Política de Privacidad</a>
+            </label>
+          </div>
+          <p class="field-error" id="terms-err">Debes aceptar los términos para continuar.</p>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-submit" id="register-btn">
+            <span class="spinner" id="register-spinner"></span>
+            <span id="register-btn-text">Crear Cuenta</span>
+            <span class="material-symbols-outlined text-base" id="register-btn-icon">person_add</span>
+          </button>
+
+          <p class="text-center font-body-sm text-on-surface-variant pt-2">
+            ¿Ya tienes cuenta?
+            <button type="button" onclick="switchTab('login')"
+              class="text-primary font-semibold hover:underline bg-none border-none cursor-pointer">
+              Inicia sesión
+            </button>
+          </p>
+        </form>
+
+      </div><!-- /forms wrapper -->
+    </div><!-- /card -->
+
+    <!-- Legal footer -->
+    <p class="mt-6 text-center font-body-sm text-on-surface-variant max-w-xs mx-auto">
+      Al continuar, aceptas nuestros
+      <a href="pages/terminos.html" target="_blank" class="text-primary hover:underline">Términos</a> y
+      <a href="pages/privacidad.html" target="_blank" class="text-primary hover:underline">Privacidad</a>.
+    </p>
+
+  </main>
+
+<!-- ──────────────────────────────────────────────
+     JAVASCRIPT
+────────────────────────────────────────────── -->
+<script>
+// ── Helpers ──────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+function showError(id, text) {
+  const el = $(id);
+  el.classList.remove('hidden');
+  if (text && $(id + '-text')) $(id + '-text').textContent = text;
+}
+function hideError(id) { $(id)?.classList.add('hidden'); }
+
+function fieldError(id, msg) {
+  const el = $(id + '-err');
+  const inp = $(id);
+  if (el) { el.textContent = msg; el.classList.add('visible'); }
+  if (inp) inp.classList.add('error-state');
+}
+function clearFieldError(id) {
+  $(id + '-err')?.classList.remove('visible');
+  $(id)?.classList.remove('error-state');
+}
+
+function setLoading(formName, loading) {
+  const btn     = $(formName + '-btn');
+  const spinner = $(formName + '-spinner');
+  const btnText = $(formName + '-btn-text');
+  const btnIcon = $(formName + '-btn-icon');
+  btn.disabled = loading;
+  spinner.style.display = loading ? 'block' : 'none';
+  btnText.style.opacity = loading ? '.6' : '1';
+  if (btnIcon) btnIcon.style.display = loading ? 'none' : 'inline';
+}
+
+// ── Tab switch ───────────────────────────────────────────
+function switchTab(tab) {
+  const tabs   = { login: $('form-login'),    register: $('form-register')    };
+  const btns   = { login: $('tab-login'),     register: $('tab-register')     };
+
+  Object.keys(tabs).forEach(k => {
+    tabs[k].classList.toggle('hidden', k !== tab);
+    btns[k].classList.toggle('active', k === tab);
+    if (k === tab) tabs[k].classList.add('form-panel');
+  });
+}
+
+// ── Role selector ─────────────────────────────────────────
+function selectRole(role) {
+  ['paciente','fisio'].forEach(r => {
+    const card = $('role-' + r);
+    const icon = card.querySelector('.role-icon');
+    const lbl  = card.querySelector('.role-label');
+    if (r === role) {
+      card.classList.add('selected');
+      icon.style.color = '#006591';
+      lbl.style.color  = '#0b1c30';
+    } else {
+      card.classList.remove('selected');
+      icon.style.color = '';
+      lbl.style.color  = '';
+    }
+  });
+  $('selected-role').value = role;
+  // Show/hide physio license field
+  $('physio-field').classList.toggle('hidden', role !== 'fisio');
+}
+
+// ── Password toggle ───────────────────────────────────────
+function togglePw(inputId, btn) {
+  const inp  = $(inputId);
+  const icon = btn.querySelector('.material-symbols-outlined');
+  const show = inp.type === 'password';
+  inp.type   = show ? 'text' : 'password';
+  icon.textContent = show ? 'visibility_off' : 'visibility';
+}
+
+// ── Password strength ─────────────────────────────────────
+function checkStrength(val) {
+  const checks = [
+    val.length >= 8,
+    /[A-Z]/.test(val) && /[0-9]/.test(val),
+    /[^A-Za-z0-9]/.test(val)
+  ];
+  const colors = ['#ba1a1a', '#f59e0b', '#006b5f'];
+  const labels = ['Débil', 'Moderada', 'Fuerte'];
+  const level  = checks.filter(Boolean).length;
+  ['sb1','sb2','sb3'].forEach((id, i) => {
+    const bar = $(id);
+    bar.style.width      = i < level ? '100%' : '0%';
+    bar.style.background = level > 0 ? colors[level - 1] : '#bec8d2';
+  });
+}
+
+// ── Remember Me — pre-fill on load ──────────────────
+(function(){
+  const saved = JSON.parse(localStorage.getItem('lc_remember') || 'null');
+  if (saved) {
+    document.getElementById('login-email').value = saved.email || '';
+    document.getElementById('remember').checked  = true;
+  }
+  // If already logged in and remembering, redirect
+  const token = localStorage.getItem('lc_token');
+  const role  = localStorage.getItem('lc_role');
+  const auto  = localStorage.getItem('lc_auto_login');
+  if (token && role && auto === '1') redirectByRole(role);
+})();
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const tab    = params.get('tab');
+  const rol    = params.get('rol');
+  if (tab === 'register' || rol) {
+    switchTab('register');
+    if (rol === 'fisio' || rol === 'fisioterapeuta') selectRole('fisio');
+  }
+})();
+
+// ── Input label highlight ────────────────────────────────
+document.querySelectorAll('.input-clinical').forEach(inp => {
+  const label = inp.closest('.space-y-1')?.querySelector('label');
+  inp.addEventListener('focus', () => { if (label) label.style.color = '#006591'; });
+  inp.addEventListener('blur',  () => { if (label) label.style.color = ''; });
+  inp.addEventListener('input', () => {
+    inp.classList.remove('error-state');
+    const errId = inp.id + '-err';
+    $(errId)?.classList.remove('visible');
+  });
+});
+
+// ── LOGIN FORM SUBMIT ─────────────────────────────────────
+$('form-login').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideError('login-error');
+
+  const email = $('login-email').value.trim();
+  const pw    = $('login-pw').value;
+  let   valid = true;
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldError('login-email', 'Ingresa un correo válido.'); valid = false;
+  } else clearFieldError('login-email');
+
+  if (pw.length < 1) {
+    fieldError('login-pw', 'Ingresa tu contraseña.'); valid = false;
+  } else clearFieldError('login-pw');
+
+  if (!valid) return;
+
+  setLoading('login', true);
+
+  try {
+    // ── Real API call ──
+    // const res  = await fetch('/api/auth/login', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ email, password: pw }),
+    // });
+    // if (!res.ok) throw new Error((await res.json()).detail || 'Error');
+    // const data = await res.json();
+    // localStorage.setItem('lc_token', data.access_token);
+    // localStorage.setItem('lc_role',  data.role);
+    // redirectByRole(data.role);
+
+    // ── DEMO (quitar al conectar API) ──────────────────
+    await new Promise(r => setTimeout(r, 1000)); // simula latencia
+    // Credenciales demo
+    const demo = {
+      'paciente@lumbacare.com':     { pw: 'Lumba2024!', role: 'paciente' },
+      'fisio@lumbacare.com':        { pw: 'Lumba2024!', role: 'fisio'    },
+      'admin@lumbacare.com':        { pw: 'Lumba2024!', role: 'admin'    },
+    };
+    const user = demo[email];
+    if (user && user.pw === pw) {
+      localStorage.setItem('lc_token', 'demo_token_' + Date.now());
+      localStorage.setItem('lc_role',  user.role);
+      localStorage.setItem('lc_email', email);
+      // Remember me
+      const remember = document.getElementById('remember').checked;
+      if (remember) {
+        localStorage.setItem('lc_remember',   JSON.stringify({ email }));
+        localStorage.setItem('lc_auto_login', '1');
+      } else {
+        localStorage.removeItem('lc_remember');
+        localStorage.removeItem('lc_auto_login');
+      }
+      redirectByRole(user.role);
+    } else {
+      throw new Error('Correo o contraseña incorrectos.');
+    }
+    // ── FIN DEMO ──────────────────────────────────────
+
+  } catch (err) {
+    showError('login-error', err.message);
+    setLoading('login', false);
+  }
+});
+
+// ── REGISTER FORM SUBMIT ──────────────────────────────────
+$('form-register').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideError('register-error');
+
+  const role    = $('selected-role').value;
+  const name    = $('reg-name').value.trim();
+  const email   = $('reg-email').value.trim();
+  const pw      = $('reg-pw').value;
+  const pw2     = $('reg-pw2').value;
+  const terms   = $('terms').checked;
+  let   valid   = true;
+
+  if (name.length < 3) {
+    fieldError('reg-name', 'Ingresa tu nombre completo.'); valid = false;
+  } else clearFieldError('reg-name');
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldError('reg-email', 'Ingresa un correo válido.'); valid = false;
+  } else clearFieldError('reg-email');
+
+  if (pw.length < 8) {
+    fieldError('reg-pw', 'Mínimo 8 caracteres.'); valid = false;
+  } else clearFieldError('reg-pw');
+
+  if (pw !== pw2) {
+    fieldError('reg-pw2', 'Las contraseñas no coinciden.'); valid = false;
+  } else clearFieldError('reg-pw2');
+
+  if (!terms) {
+    $('terms-err').classList.add('visible'); valid = false;
+  } else {
+    $('terms-err').classList.remove('visible');
+  }
+
+  if (!valid) return;
+
+  setLoading('register', true);
+
+  try {
+    // ── Real API call ──
+    // const res = await fetch('/api/auth/register', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ full_name: name, email, password: pw, role }),
+    // });
+    // if (!res.ok) throw new Error((await res.json()).detail || 'Error al registrar');
+    // const data = await res.json();
+    // localStorage.setItem('lc_token', data.access_token);
+    // localStorage.setItem('lc_role',  role);
+    // redirectByRole(role);
+
+    // ── DEMO ──────────────────────────────────────────
+    await new Promise(r => setTimeout(r, 1200));
+    localStorage.setItem('lc_token', 'demo_token_' + Date.now());
+    localStorage.setItem('lc_role',  role);
+    localStorage.setItem('lc_email', email);
+    localStorage.setItem('lc_name',  name);
+    redirectByRole(role);
+    // ── FIN DEMO ──────────────────────────────────────
+
+  } catch (err) {
+    showError('register-error', err.message);
+    setLoading('register', false);
+  }
+});
+
+// ── Redirect by role ──────────────────────────────────────
+function redirectByRole(role) {
+  const routes = {
+    paciente: 'paciente/dashboard.html',
+    fisio:    'fisio/dashboard.html',
+    admin:    'admin/dashboard.html',
+  };
+  window.location.href = routes[role] || 'paciente/dashboard.html';
+}
+</script>
+
+</body>
+</html>

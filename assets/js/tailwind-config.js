@@ -1,0 +1,108 @@
+// ─────────────────────────────────────────────────────────────
+// LumbaCare — Clinical Clarity Design System · Tailwind Config
+// Aplicar en TODOS los archivos HTML antes de usar clases
+// ─────────────────────────────────────────────────────────────
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        // Primary — Medical Blue
+        "primary":                  "#006591",
+        "on-primary":               "#ffffff",
+        "primary-container":        "#0ea5e9",
+        "on-primary-container":     "#003751",
+        "primary-fixed":            "#c9e6ff",
+        "primary-fixed-dim":        "#89ceff",
+        "on-primary-fixed":         "#001e2f",
+        "on-primary-fixed-variant": "#004c6e",
+        "inverse-primary":          "#89ceff",
+        "surface-tint":             "#006591",
+        // Secondary — Healing Teal
+        "secondary":                "#006b5f",
+        "on-secondary":             "#ffffff",
+        "secondary-container":      "#6df5e1",
+        "on-secondary-container":   "#006f64",
+        "secondary-fixed":          "#71f8e4",
+        "secondary-fixed-dim":      "#4fdbc8",
+        "on-secondary-fixed":       "#00201c",
+        "on-secondary-fixed-variant":"#005048",
+        // Tertiary — Warm Amber
+        "tertiary":                 "#8a5100",
+        "on-tertiary":              "#ffffff",
+        "tertiary-container":       "#de8712",
+        "on-tertiary-container":    "#4d2b00",
+        "tertiary-fixed":           "#ffdcbd",
+        "tertiary-fixed-dim":       "#ffb86e",
+        "on-tertiary-fixed":        "#2c1600",
+        "on-tertiary-fixed-variant":"#693c00",
+        // Error
+        "error":                    "#ba1a1a",
+        "on-error":                 "#ffffff",
+        "error-container":          "#ffdad6",
+        "on-error-container":       "#93000a",
+        // Surface — Neutral
+        "background":               "#f8f9ff",
+        "on-background":            "#0b1c30",
+        "surface":                  "#f8f9ff",
+        "surface-dim":              "#cbdbf5",
+        "surface-bright":           "#f8f9ff",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low":    "#eff4ff",
+        "surface-container":        "#e5eeff",
+        "surface-container-high":   "#dce9ff",
+        "surface-container-highest":"#d3e4fe",
+        "surface-variant":          "#d3e4fe",
+        "on-surface":               "#0b1c30",
+        "on-surface-variant":       "#3e4850",
+        "inverse-surface":          "#213145",
+        "inverse-on-surface":       "#eaf1ff",
+        // Outline
+        "outline":                  "#6e7881",
+        "outline-variant":          "#bec8d2",
+      },
+      borderRadius: {
+        "sm":      "0.25rem",
+        "DEFAULT": "0.5rem",
+        "lg":      "0.75rem",
+        "xl":      "1rem",
+        "2xl":     "1.5rem",
+        "3xl":     "2rem",
+        "full":    "9999px",
+      },
+      spacing: {
+        "unit":                "8px",
+        "gutter":              "24px",
+        "container-max-width": "1280px",
+        "margin-mobile":       "16px",
+        "margin-desktop":      "32px",
+      },
+      fontFamily: {
+        "sans": ["Plus Jakarta Sans", "sans-serif"],
+        "display-lg":  ["Plus Jakarta Sans"],
+        "headline-lg": ["Plus Jakarta Sans"],
+        "headline-md": ["Plus Jakarta Sans"],
+        "headline-sm": ["Plus Jakarta Sans"],
+        "body-lg":     ["Plus Jakarta Sans"],
+        "body-md":     ["Plus Jakarta Sans"],
+        "body-sm":     ["Plus Jakarta Sans"],
+        "label-md":    ["Plus Jakarta Sans"],
+        "label-sm":    ["Plus Jakarta Sans"],
+      },
+      fontSize: {
+        "display-lg":  ["48px", { lineHeight:"60px", letterSpacing:"-0.02em", fontWeight:"700" }],
+        "headline-lg": ["32px", { lineHeight:"40px", letterSpacing:"-0.01em", fontWeight:"700" }],
+        "headline-md": ["24px", { lineHeight:"32px", fontWeight:"600" }],
+        "headline-sm": ["20px", { lineHeight:"28px", fontWeight:"600" }],
+        "body-lg":     ["18px", { lineHeight:"28px", fontWeight:"400" }],
+        "body-md":     ["16px", { lineHeight:"24px", fontWeight:"400" }],
+        "body-sm":     ["14px", { lineHeight:"20px", fontWeight:"400" }],
+        "label-md":    ["14px", { lineHeight:"20px", letterSpacing:"0.01em", fontWeight:"600" }],
+        "label-sm":    ["12px", { lineHeight:"16px", fontWeight:"600" }],
+      },
+      maxWidth: {
+        "container": "1280px",
+      },
+    },
+  },
+};
